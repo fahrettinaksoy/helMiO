@@ -1,0 +1,181 @@
+<script setup>
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { fleetApi } from '@/api/client';
+import { useServersStore } from '@/stores/servers';
+import { methodLabel } from '@/utils/format';
+import socket from '@/api/socket';
+import PageShell from '@/components/PageShell.vue';
+
+const { t } = useI18n();
+const serversStore = useServersStore();
+
+const selected = ref([]);
+const action = ref('restartAll');
+const group = ref('');
+const strategy = ref('parallel');
+const delaySec = ref(5);
+const running = ref(false);
+const results = ref([]);
+const error = ref('');
+
+const ACTIONS = [
+  { value: 'startAll', icon: 'mdi-play', group: false },
+  { value: 'stopAll', icon: 'mdi-stop', group: false },
+  { value: 'restartAll', icon: 'mdi-restart', group: false },
+  { value: 'startGroup', icon: 'mdi-play-box', group: true },
+  { value: 'stopGroup', icon: 'mdi-stop', group: true },
+  { value: 'restartGroup', icon: 'mdi-restart', group: true },
+];
+const needsGroup = computed(() => ACTIONS.find((a) => a.value === action.value)?.group);
+const canRun = computed(() => selected.value.length > 0 && (!needsGroup.value || group.value.trim()) && !running.value);
+
+const serverItems = computed(() => serversStore.servers.map((s) => ({ value: s.id, title: s.name, method: s.method })));
+
+// Live progress: backend pushes a 'fleet' event per server as it completes.
+let currentRunId = null;
+function onFleet(payload) {
+  if (!currentRunId || payload.runId !== currentRunId) return;
+  if (payload.event === 'progress') {
+    const i = results.value.findIndex((r) => r.serverId === payload.result.serverId);
+    if (i === -1) results.value.push(payload.result);
+    else results.value[i] = payload.result;
+  }
+}
+onMounted(() => {
+  if (!serversStore.servers.length) serversStore.fetchAll();
+  socket.on('fleet', onFleet);
+});
+onBeforeUnmount(() => socket.off('fleet', onFleet));
+
+function toggleAll() {
+  selected.value = selected.value.length === serverItems.value.length ? [] : serverItems.value.map((s) => s.value);
+}
+
+async function run() {
+  running.value = true;
+  error.value = '';
+  results.value = [];
+  currentRunId = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
+  try {
+    const res = await fleetApi.run({
+      action: action.value,
+      serverIds: selected.value,
+      group: needsGroup.value ? group.value.trim() : undefined,
+      strategy: strategy.value,
+      delayMs: strategy.value === 'sequential' ? Math.max(0, Number(delaySec.value) || 0) * 1000 : 0,
+      runId: currentRunId,
+    });
+    results.value = res.results; // final authoritative aggregate
+  } catch (e) {
+    error.value = e.response?.data?.error || e.message;
+  } finally {
+    running.value = false;
+    currentRunId = null;
+  }
+}
+
+const okCount = computed(() => results.value.filter((r) => r.ok).length);
+</script>
+
+<template>
+  <PageShell :title="t('fleet.title')" :subtitle="t('fleet.subtitle')" icon="mdi-server-network">
+    <v-row>
+      <!-- Config -->
+      <v-col cols="12" md="5">
+        <v-card variant="flat" class="panel-card pa-4">
+          <div class="text-overline text-medium-emphasis mb-1">{{ t('fleet.servers') }}</div>
+          <div class="d-flex align-center mb-2">
+            <v-btn size="small" variant="text" @click="toggleAll">
+              {{ selected.length === serverItems.length ? t('fleet.clearAll') : t('fleet.selectAll') }}
+            </v-btn>
+            <v-spacer />
+            <span class="text-caption text-medium-emphasis">{{ t('fleet.nSelected', { n: selected.length }) }}</span>
+          </div>
+          <v-sheet rounded class="server-pick mb-4">
+            <v-checkbox
+              v-for="s in serverItems"
+              :key="s.value"
+              v-model="selected"
+              :value="s.value"
+              density="compact"
+              hide-details
+              color="primary"
+            >
+              <template #label>
+                <span class="font-weight-medium">{{ s.title }}</span>
+                <v-chip size="x-small" variant="tonal" label class="ms-2">{{ methodLabel(s.method) }}</v-chip>
+              </template>
+            </v-checkbox>
+            <div v-if="!serverItems.length" class="pa-3 text-caption text-medium-emphasis">{{ t('fleet.noServers') }}</div>
+          </v-sheet>
+
+          <div class="text-overline text-medium-emphasis mb-1">{{ t('fleet.action') }}</div>
+          <v-select v-model="action" :items="ACTIONS" density="comfortable" variant="outlined" class="mb-2">
+            <template #selection="{ item }"><v-icon :icon="item.raw.icon" size="18" class="me-2" />{{ t(`fleet.act_${item.value}`) }}</template>
+            <template #item="{ item, props: p }"><v-list-item v-bind="p" :prepend-icon="item.raw.icon" :title="t(`fleet.act_${item.value}`)" /></template>
+          </v-select>
+          <v-text-field v-if="needsGroup" v-model="group" :label="t('fleet.groupName')" density="comfortable" variant="outlined" class="mb-2" autocomplete="off" />
+
+          <div class="text-overline text-medium-emphasis mb-1">{{ t('fleet.strategy') }}</div>
+          <v-btn-toggle v-model="strategy" mandatory density="comfortable" variant="outlined" divided class="mb-2">
+            <v-btn value="parallel" size="small" prepend-icon="mdi-lightning-bolt">{{ t('fleet.parallel') }}</v-btn>
+            <v-btn value="sequential" size="small" prepend-icon="mdi-format-list-numbered">{{ t('fleet.sequential') }}</v-btn>
+          </v-btn-toggle>
+          <v-text-field
+            v-if="strategy === 'sequential'"
+            v-model.number="delaySec"
+            :label="t('fleet.delay')"
+            type="number" min="0" suffix="s"
+            density="comfortable" variant="outlined"
+            :hint="t('fleet.delayHint')" persistent-hint
+            class="mb-2"
+          />
+
+          <v-btn color="primary" size="large" block :loading="running" :disabled="!canRun" prepend-icon="mdi-rocket-launch" class="mt-2" @click="run">
+            {{ t('fleet.run') }}
+          </v-btn>
+        </v-card>
+      </v-col>
+
+      <!-- Results -->
+      <v-col cols="12" md="7">
+        <v-card variant="flat" class="panel-card pa-4">
+          <div class="d-flex align-center mb-3">
+            <span class="text-overline text-medium-emphasis">{{ t('fleet.results') }}</span>
+            <v-spacer />
+            <v-chip v-if="results.length" :color="okCount === results.length ? 'success' : 'warning'" size="small" variant="tonal" label>
+              {{ okCount }}/{{ results.length }}
+            </v-chip>
+          </div>
+
+          <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-3" :text="error" />
+
+          <div v-if="running && !results.length" class="py-10 text-center">
+            <v-progress-circular indeterminate color="primary" />
+            <div class="text-caption text-medium-emphasis mt-2">{{ t('fleet.running') }}</div>
+          </div>
+          <div v-else-if="!results.length" class="py-10 text-center text-medium-emphasis text-caption">{{ t('fleet.idle') }}</div>
+
+          <v-list v-else density="compact" class="bg-transparent">
+            <v-list-item v-for="r in results" :key="r.serverId" class="px-2">
+              <template #prepend>
+                <v-icon :icon="r.ok ? 'mdi-check-circle' : 'mdi-alert-circle'" :color="r.ok ? 'success' : 'error'" />
+              </template>
+              <v-list-item-title class="font-weight-medium">{{ r.name }}</v-list-item-title>
+              <v-list-item-subtitle v-if="r.error" class="text-error">{{ r.error }}</v-list-item-subtitle>
+              <template #append>
+                <span class="text-caption text-medium-emphasis">{{ r.durationMs }}ms</span>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-col>
+    </v-row>
+  </PageShell>
+</template>
+
+<style scoped>
+.panel-card { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
+.server-pick { max-height: 280px; overflow-y: auto; background: rgba(var(--v-theme-on-surface), 0.04); padding: 6px 10px; }
+</style>
