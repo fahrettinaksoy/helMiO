@@ -1,14 +1,18 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useServersStore } from '@/stores/servers';
+import { useRealtimeStore } from '@/stores/realtime';
 import { useUiStore } from '@/stores/ui';
 import { useI18n } from 'vue-i18n';
 import SupervisorInstallPanel from '@/components/SupervisorInstallPanel.vue';
+import ServerCard from '@/components/ServerCard.vue';
 import PageShell from '@/components/PageShell.vue';
 import { methodLabel } from '@/utils/format';
+import { overviewApi } from '@/api/client';
 
 const { t } = useI18n();
 const store = useServersStore();
+const realtime = useRealtimeStore();
 const ui = useUiStore();
 const installPanel = ref(false);
 const installTarget = ref(null);
@@ -51,6 +55,43 @@ const filteredServers = computed(() => {
   );
 });
 
+// --- Live status for the card view (realtime snapshots + host metrics) ---
+let subscribed = [];
+function syncSubscriptions() {
+  const ids = store.servers.map((s) => s.id);
+  subscribed.forEach((id) => { if (!ids.includes(id)) realtime.unsubscribe(id); });
+  ids.forEach((id) => { if (!subscribed.includes(id)) realtime.subscribe(id); });
+  subscribed = ids;
+}
+const hostById = ref({});
+async function loadHosts() {
+  try {
+    const ov = await overviewApi.get(60);
+    hostById.value = Object.fromEntries((ov.metrics.hosts || []).map((h) => [h.serverId, h]));
+  } catch { /* host metrics optional */ }
+}
+
+function segmentsOf({ running = 0, other = 0, stopped = 0, fatal = 0 }) {
+  return [
+    { key: 'running', color: 'success', value: running },
+    { key: 'other', color: 'warning', value: other },
+    { key: 'stopped', color: 'grey', value: stopped },
+    { key: 'fatal', color: 'error', value: fatal },
+  ].filter((x) => x.value > 0);
+}
+function vmFor(s) {
+  const snap = realtime.snapshots[s.id];
+  const error = realtime.errors[s.id];
+  const sum = snap?.summary;
+  return {
+    id: s.id, name: s.name, method: s.method, connTarget: connTarget(s), error, summary: sum,
+    statusColor: error ? 'error' : sum ? (sum.fatal ? 'warning' : 'success') : 'grey',
+    segments: sum ? segmentsOf(sum) : [],
+    lastUpdate: realtime.lastUpdate[s.id],
+    host: hostById.value[s.id],
+  };
+}
+
 const headers = computed(() => [
   { title: t('servers.colName'), key: 'name', sortable: true },
   { title: t('servers.colMethod'), key: 'method', width: 150, sortable: true },
@@ -71,13 +112,19 @@ function recalcHeight() {
     if (overflow > 0) listHeight.value = Math.max(240, h - overflow);
   });
 }
-onMounted(() => {
-  store.fetchAll();
+onMounted(async () => {
+  if (!store.servers.length) await store.fetchAll();
+  syncSubscriptions();
+  loadHosts();
   recalcHeight();
   window.addEventListener('resize', recalcHeight);
 });
-onBeforeUnmount(() => window.removeEventListener('resize', recalcHeight));
+onBeforeUnmount(() => {
+  subscribed.forEach((id) => realtime.unsubscribe(id));
+  window.removeEventListener('resize', recalcHeight);
+});
 watch([view, () => store.servers.length, q], () => nextTick(recalcHeight));
+watch(() => store.servers.map((s) => s.id).join(','), () => { syncSubscriptions(); loadHosts(); });
 
 function add() {
   ui.openAddServer();
@@ -178,48 +225,18 @@ async function doDelete() {
 
     <!-- Card view -->
     <div v-else-if="view === 'cards'" class="srv-scroll" :style="{ height: listHeight + 'px' }">
-    <v-row>
-      <v-col v-for="s in filteredServers" :key="s.id" cols="12" md="6" lg="4">
-        <v-card variant="flat" class="h-100 server-card d-flex flex-column">
-          <v-card-item>
-            <template #prepend>
-              <v-avatar color="primary" variant="tonal" rounded>
-                <v-icon :icon="methodIcon(s.method)" />
-              </v-avatar>
-            </template>
-            <v-card-title>{{ s.name }}</v-card-title>
-            <v-card-subtitle>
-              <v-chip size="x-small" variant="tonal" label>{{ methodLabel(s.method) }}</v-chip>
-            </v-card-subtitle>
-          </v-card-item>
-
-          <v-card-text class="text-body-2 text-medium-emphasis flex-grow-1">
-            <div class="d-flex align-center ga-1 conn">
-              <v-icon :icon="methodIcon(s.method)" size="14" />
-              <span class="text-truncate">{{ connTarget(s) }}</span>
-            </div>
-          </v-card-text>
-
-          <v-divider />
-          <v-card-actions>
-            <v-btn size="small" variant="text" prepend-icon="mdi-view-list" :to="`/servers/${s.id}`">{{ t('servers.processes') }}</v-btn>
-            <v-spacer />
-            <v-tooltip :text="t('servers.diagnose')" location="top">
-              <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-medical-bag" variant="text" @click="openInstall(s)" /></template>
-            </v-tooltip>
-            <v-tooltip :text="t('common.test')" location="top">
-              <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-connection" variant="text" :loading="testing[s.id]" @click="test(s)" /></template>
-            </v-tooltip>
-            <v-tooltip :text="t('common.edit')" location="top">
-              <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-pencil" variant="text" @click="edit(s)" /></template>
-            </v-tooltip>
-            <v-tooltip :text="t('common.delete')" location="top">
-              <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-delete" variant="text" color="error" @click="confirmDelete = s" /></template>
-            </v-tooltip>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
+      <div class="srv-card-grid">
+        <ServerCard
+          v-for="s in filteredServers"
+          :key="s.id"
+          :vm="vmFor(s)"
+          :testing="!!testing[s.id]"
+          @diagnose="openInstall(s)"
+          @test="test(s)"
+          @edit="edit(s)"
+          @remove="confirmDelete = s"
+        />
+      </div>
     </div>
 
     <!-- Table view -->
@@ -293,7 +310,7 @@ async function doDelete() {
 
 <style scoped>
 .server-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border: 0px;
 }
 .srv-search {
   width: 340px;
@@ -306,6 +323,11 @@ async function doDelete() {
 .srv-scroll {
   overflow-y: auto;
   padding-right: 4px;
+}
+.srv-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 .srv-table :deep(thead th) {
   background: rgb(var(--v-theme-surface)) !important;

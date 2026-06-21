@@ -296,21 +296,19 @@ watch(() => realtime.alerts.length, () => {
           </v-tooltip>
         </div>
         <div v-else class="pa-3">
-          <v-sheet rounded="lg" class="pa-3 d-flex align-center ga-3 status-card">
-            <span class="status-dot" :class="realtime.connected ? 'is-on' : 'is-off'" />
-            <div class="flex-grow-1 min-w-0">
-              <div class="text-body-2 font-weight-medium">
+          <v-sheet rounded="lg" class="status-card" :class="realtime.connected ? 'is-on' : 'is-off'">
+            <div class="status-badge">
+              <v-icon :icon="realtime.connected ? 'mdi-lan-connect' : 'mdi-lan-disconnect'" size="18" />
+              <span v-if="realtime.connected" class="status-ping" />
+            </div>
+            <div class="status-text min-w-0">
+              <div class="status-title">
                 {{ realtime.connected ? t('app.liveConnection') : t('app.noConnection') }}
               </div>
-              <div class="text-caption text-medium-emphasis">
+              <div class="status-sub">
                 {{ realtime.connected ? t('app.liveConnectionSub') : t('app.reconnecting') }}
               </div>
             </div>
-            <v-icon
-              :icon="realtime.connected ? 'mdi-lan-connect' : 'mdi-lan-disconnect'"
-              :color="realtime.connected ? 'success' : 'error'"
-              size="18"
-            />
           </v-sheet>
         </div>
       </template>
@@ -319,7 +317,7 @@ watch(() => realtime.alerts.length, () => {
     <!-- Second panel: live server list, to the right of the menu -->
     <ServerListPanel />
 
-    <v-main>
+    <v-main class="d-flex flex-column">
       <div class="page-pad">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -375,31 +373,88 @@ watch(() => realtime.alerts.length, () => {
 /* Hero fills flush to the edges; spacing lives inside the hero panel */
 .page-pad {
   padding: 0;
+  /* Fill v-main so pages can opt into a viewport-height layout (PageShell `fill`).
+     Block-height pages still grow naturally and scroll the document. */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.page-pad > * {
+  flex: 0 0 auto;
+}
+.page-pad > .shell-fill {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-/* Live-connection status indicator — theme-adaptive (no fixed surface color) */
+/* Live-connection status card — leading status badge + roomy text, theme-adaptive */
 .status-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
   background: rgba(var(--v-theme-on-surface), 0.04);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-left: 3px solid rgb(var(--v-theme-success));
+  transition: border-color 0.25s ease, background 0.25s ease;
 }
-.status-dot {
+.status-card.is-off {
+  border-left-color: rgb(var(--v-theme-error));
+}
+
+/* Status badge: tinted rounded square with the connection icon */
+.status-badge {
   flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
-.status-dot.is-on {
-  background: rgb(var(--v-theme-success));
-  box-shadow: 0 0 0 0 rgba(var(--v-theme-success), 0.6);
-  animation: pulse 2s infinite;
+.status-card.is-on .status-badge {
+  color: rgb(var(--v-theme-success));
+  background: rgba(var(--v-theme-success), 0.14);
 }
-.status-dot.is-off {
-  background: rgb(var(--v-theme-error));
+.status-card.is-off .status-badge {
+  color: rgb(var(--v-theme-error));
+  background: rgba(var(--v-theme-error), 0.14);
 }
+
+/* A single live ping ring on the badge when connected */
+.status-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  box-shadow: 0 0 0 0 rgba(var(--v-theme-success), 0.5);
+  animation: pulse 2.2s ease-out infinite;
+}
+
+.status-text {
+  flex: 1 1 auto;
+  line-height: 1.25;
+}
+.status-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-sub {
+  font-size: 0.7rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(var(--v-theme-success), 0.5); }
-  70% { box-shadow: 0 0 0 7px rgba(var(--v-theme-success), 0); }
+  0% { box-shadow: 0 0 0 0 rgba(var(--v-theme-success), 0.45); }
+  70% { box-shadow: 0 0 0 10px rgba(var(--v-theme-success), 0); }
   100% { box-shadow: 0 0 0 0 rgba(var(--v-theme-success), 0); }
 }
 </style>

@@ -79,11 +79,13 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
 </script>
 
 <template>
-  <PageShell :title="t('fleet.title')" :subtitle="t('fleet.subtitle')" icon="mdi-server-network">
-    <v-row>
+  <PageShell :title="t('fleet.title')" icon="mdi-server-network" fill>
+    <div class="fleet-wrap">
+    <v-row class="h-100">
       <!-- Config -->
-      <v-col cols="12" md="5">
-        <v-card variant="flat" class="panel-card pa-4">
+      <v-col cols="12" md="5" class="fleet-col">
+        <v-card variant="flat" class="panel-card fleet-card d-flex flex-column">
+          <div class="fleet-card-body pa-4">
           <div class="text-overline text-medium-emphasis mb-1">{{ t('fleet.servers') }}</div>
           <div class="d-flex align-center mb-2">
             <v-btn size="small" variant="text" @click="toggleAll">
@@ -131,16 +133,21 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
             :hint="t('fleet.delayHint')" persistent-hint
             class="mb-2"
           />
+          </div>
 
-          <v-btn color="primary" size="large" block :loading="running" :disabled="!canRun" prepend-icon="mdi-rocket-launch" class="mt-2" @click="run">
-            {{ t('fleet.run') }}
-          </v-btn>
+          <v-spacer />
+          <v-divider />
+          <div class="fleet-card-footer pa-4">
+            <v-btn color="primary" size="large" block :loading="running" :disabled="!canRun" prepend-icon="mdi-rocket-launch" @click="run">
+              {{ t('fleet.run') }}
+            </v-btn>
+          </div>
         </v-card>
       </v-col>
 
       <!-- Results -->
-      <v-col cols="12" md="7">
-        <v-card variant="flat" class="panel-card pa-4">
+      <v-col cols="12" md="7" class="fleet-col">
+        <v-card variant="flat" class="panel-card pa-4 fleet-card">
           <div class="d-flex align-center mb-3">
             <span class="text-overline text-medium-emphasis">{{ t('fleet.results') }}</span>
             <v-spacer />
@@ -172,10 +179,28 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
         </v-card>
       </v-col>
     </v-row>
+    </div>
   </PageShell>
 </template>
 
 <style scoped>
 .panel-card { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
 .server-pick { max-height: 280px; overflow-y: auto; background: rgba(var(--v-theme-on-surface), 0.04); padding: 6px 10px; }
+/* Fill the shell (PageShell `fill`): both columns stretch to the viewport and
+   each card scrolls internally. */
+.fleet-wrap { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.fleet-col { height: 100%; }
+.fleet-card { height: 100%; overflow-y: auto; }
+/* Config card: body scrolls, footer (Run button) stays pinned at the bottom. */
+.fleet-card.d-flex { overflow: hidden; }
+.fleet-card-body { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+.fleet-card-footer { flex: 0 0 auto; }
+@media (max-width: 959px) {
+  /* On mobile the columns stack, so let the wrapper scroll instead. */
+  .fleet-wrap { overflow: visible; }
+  .fleet-col { height: auto; }
+  .fleet-card { height: auto; min-height: 320px; }
+  .fleet-card.d-flex { overflow: visible; }
+  .fleet-card-body { overflow-y: visible; }
+}
 </style>

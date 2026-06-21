@@ -1,12 +1,17 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usersApi } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
 import PageShell from '@/components/PageShell.vue';
+import SidePanel from '@/components/SidePanel.vue';
+import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
 const auth = useAuthStore();
+
+const wrap = ref(null);
+const { height, recalc } = useFitHeight(wrap);
 
 const users = ref([]);
 const loading = ref(false);
@@ -47,6 +52,7 @@ async function load() {
   }
 }
 onMounted(load);
+watch(() => users.value.length, () => nextTick(recalc));
 
 function openCreate() {
   editing.value = null;
@@ -111,6 +117,7 @@ const isSelf = (u) => u.id === auth.user?.id;
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
+    <div ref="wrap">
     <v-card variant="flat" class="panel-card">
       <v-data-table
         :headers="headers"
@@ -119,6 +126,8 @@ const isSelf = (u) => u.id === auth.user?.id;
         item-value="id"
         density="comfortable"
         hover
+        fixed-header
+        :height="height"
         hide-default-footer
         :items-per-page="-1"
         class="bg-transparent"
@@ -161,46 +170,49 @@ const isSelf = (u) => u.id === auth.user?.id;
         </template>
       </v-data-table>
     </v-card>
+    </div>
 
-    <!-- Create / edit dialog -->
-    <v-dialog v-model="dialog" max-width="480">
-      <v-card rounded="lg">
-        <v-card-title>{{ editing ? t('users.editTitle') : t('users.addUser') }}</v-card-title>
-        <v-card-text>
-          <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="mb-3" :text="formError" />
-          <v-text-field
-            v-model="form.username"
-            :label="t('auth.username')"
-            variant="outlined"
-            density="comfortable"
-            :disabled="!!editing"
-            class="mb-2"
-          />
-          <v-text-field v-model="form.displayName" :label="t('auth.displayName')" variant="outlined" density="comfortable" class="mb-2" />
-          <v-select v-model="form.role" :items="ROLES" :label="t('users.colRole')" variant="outlined" density="comfortable" class="mb-2">
-            <template #selection="{ item }">{{ t(`roles.${item.value}`) }}</template>
-            <template #item="{ item, props: p }">
-              <v-list-item v-bind="p" :title="t(`roles.${item.value}`)" :subtitle="t(`roles.${item.value}_desc`)" />
-            </template>
-          </v-select>
-          <v-text-field
-            v-model="form.password"
-            :label="editing ? t('users.newPasswordOptional') : t('auth.password')"
-            type="password"
-            variant="outlined"
-            density="comfortable"
-            autocomplete="new-password"
-            class="mb-2"
-          />
-          <v-switch v-if="editing" v-model="form.disabled" :label="t('users.disableAccount')" color="error" density="compact" hide-details inset />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" :loading="saving" @click="save">{{ t('common.save') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Create / edit form (slide-over) -->
+    <SidePanel
+      v-model="dialog"
+      :title="editing ? t('users.editTitle') : t('users.addUser')"
+      :icon="editing ? 'mdi-account-edit' : 'mdi-account-plus'"
+      :width="480"
+    >
+      <div class="pa-4">
+        <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="mb-3" :text="formError" />
+        <v-text-field
+          v-model="form.username"
+          :label="t('auth.username')"
+          variant="outlined"
+          density="comfortable"
+          :disabled="!!editing"
+          class="mb-2"
+        />
+        <v-text-field v-model="form.displayName" :label="t('auth.displayName')" variant="outlined" density="comfortable" class="mb-2" />
+        <v-select v-model="form.role" :items="ROLES" :label="t('users.colRole')" variant="outlined" density="comfortable" class="mb-2">
+          <template #selection="{ item }">{{ t(`roles.${item.value}`) }}</template>
+          <template #item="{ item, props: p }">
+            <v-list-item v-bind="p" :title="t(`roles.${item.value}`)" :subtitle="t(`roles.${item.value}_desc`)" />
+          </template>
+        </v-select>
+        <v-text-field
+          v-model="form.password"
+          :label="editing ? t('users.newPasswordOptional') : t('auth.password')"
+          type="password"
+          variant="outlined"
+          density="comfortable"
+          autocomplete="new-password"
+          class="mb-2"
+        />
+        <v-switch v-if="editing" v-model="form.disabled" :label="t('users.disableAccount')" color="error" density="compact" hide-details inset />
+      </div>
+      <template #footer="{ close }">
+        <v-spacer />
+        <v-btn variant="text" @click="close">{{ t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" :loading="saving" @click="save">{{ t('common.save') }}</v-btn>
+      </template>
+    </SidePanel>
 
     <v-dialog :model-value="!!confirmDelete" max-width="420" @update:model-value="confirmDelete = null">
       <v-card rounded="lg">
@@ -220,6 +232,6 @@ const isSelf = (u) => u.id === auth.user?.id;
 
 <style scoped>
 .panel-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border: 0px;
 }
 </style>

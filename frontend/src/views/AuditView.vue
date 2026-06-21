@@ -1,12 +1,17 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { auditApi } from '@/api/client';
 import { useServersStore } from '@/stores/servers';
 import PageShell from '@/components/PageShell.vue';
+import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
 const serversStore = useServersStore();
+
+const wrap = ref(null);
+// Leave room for the "showing N of M" footer strip inside the card.
+const { height, recalc } = useFitHeight(wrap, { bottom: 56 });
 
 const data = ref({ items: [], total: 0, limit: 100, offset: 0 });
 const loading = ref(false);
@@ -57,6 +62,7 @@ async function load() {
     loading.value = false;
   }
 }
+watch(() => data.value.items.length, () => nextTick(recalc));
 
 onMounted(() => {
   if (!serversStore.servers.length) serversStore.fetchAll();
@@ -99,6 +105,7 @@ onMounted(() => {
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
+    <div ref="wrap">
     <v-card variant="flat" class="panel-card">
       <v-data-table
         :headers="headers"
@@ -107,6 +114,8 @@ onMounted(() => {
         item-value="id"
         density="compact"
         hover
+        fixed-header
+        :height="height"
         hide-default-footer
         :items-per-page="-1"
         class="bg-transparent mono-table"
@@ -143,12 +152,13 @@ onMounted(() => {
         {{ t('audit.showing', { shown: data.items.length, total: data.total }) }}
       </div>
     </v-card>
+    </div>
   </PageShell>
 </template>
 
 <style scoped>
 .panel-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border: 0px;
 }
 .audit-filter { width: 240px; max-width: 40vw; }
 .audit-status { width: 160px; }

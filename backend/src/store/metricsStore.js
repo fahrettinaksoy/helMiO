@@ -73,6 +73,39 @@ export const metricsStore = {
     return buf.filter((p) => p.at >= cutoff);
   },
 
+  /**
+   * Fleet-wide aggregate for the dashboard:
+   *  - series: per-minute buckets summed across servers (cpu/mem/running/total)
+   *  - hosts:  the latest sample per server (load/mem%/disk% + cpu/mem)
+   * Read entirely from the in-memory buffers — no calls to the targets.
+   */
+  fleet(sinceMs = 3600000, bucketMs = 60000) {
+    const cutoff = Date.now() - sinceMs;
+    const byBucket = new Map(); // bucketAt -> Map(serverId -> sample)
+    const hosts = {};
+    for (const [id, buf] of series) {
+      const recent = buf.filter((p) => p.at >= cutoff);
+      if (recent.length) hosts[id] = recent[recent.length - 1];
+      for (const p of recent) {
+        const b = Math.floor(p.at / bucketMs) * bucketMs;
+        let m = byBucket.get(b);
+        if (!m) { m = new Map(); byBucket.set(b, m); }
+        m.set(id, p); // last sample per server wins within a bucket
+      }
+    }
+    const fleetSeries = [...byBucket.entries()].sort((a, b) => a[0] - b[0]).map(([at, m]) => {
+      let cpu = 0, mem = 0, running = 0, total = 0, cpuHas = false, memHas = false;
+      for (const p of m.values()) {
+        if (p.cpu != null) { cpu += p.cpu; cpuHas = true; }
+        if (p.mem != null) { mem += p.mem; memHas = true; }
+        running += p.running || 0;
+        total += p.total || 0;
+      }
+      return { at, cpu: cpuHas ? Math.round(cpu * 10) / 10 : null, mem: memHas ? Math.round(mem * 10) / 10 : null, running, total };
+    });
+    return { series: fleetSeries, hosts };
+  },
+
   clear(serverId) {
     series.delete(serverId);
     lastAt.delete(serverId);
