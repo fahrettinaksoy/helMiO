@@ -13,11 +13,14 @@ defineProps({
   subtitle: { type: String, default: '' },
   icon: { type: String, default: '' },
   back: { type: String, default: '' },
+  // Stretch the content card to fill the viewport height (default slot scrolls
+  // internally) instead of growing with its content.
+  fill: { type: Boolean, default: false },
 });
 </script>
 
 <template>
-  <v-card flat tile class="page-shell border-0">
+  <v-card flat tile class="page-shell border-0" :class="{ 'shell-fill': fill }">
     <!-- Hero band. extension-height == content card's negative margin, so the
          title row IS the full visible blue band → title is vertically centered. -->
     <v-toolbar color="primary" flat extended height="112" extension-height="48" class="hero-toolbar">
@@ -87,5 +90,35 @@ defineProps({
 }
 .content-card {
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+/* Fill mode: stretch the whole shell to the viewport, with the content card's
+   inner slot taking the remaining height (and scrolling there if needed). The
+   bottom margin mirrors the card's left/right inset for symmetric spacing. */
+.shell-fill {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.shell-fill .hero-toolbar {
+  flex: 0 0 auto;
+}
+.shell-fill .content-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.shell-fill .content-card > .v-toolbar,
+.shell-fill .content-card > hr {
+  flex: 0 0 auto;
+}
+.shell-fill .content-card > .pa-4 {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

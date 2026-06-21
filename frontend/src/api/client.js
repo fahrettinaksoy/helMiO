@@ -60,6 +60,10 @@ export const fleetApi = {
   run: (data) => api.post('/fleet/run', data).then((r) => r.data),
 };
 
+export const overviewApi = {
+  get: (range = 60) => api.get('/overview', { params: { range } }).then((r) => r.data),
+};
+
 export const channelsApi = {
   meta: () => api.get('/channels/meta').then((r) => r.data),
   list: () => api.get('/channels').then((r) => r.data),

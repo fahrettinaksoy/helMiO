@@ -1,10 +1,16 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { apiTokensApi } from '@/api/client';
 import PageShell from '@/components/PageShell.vue';
+import SidePanel from '@/components/SidePanel.vue';
+import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
+
+const wrap = ref(null);
+// Leave room for the usage-hint alert that sits above the table.
+const { height, recalc } = useFitHeight(wrap);
 
 const tokens = ref([]);
 const loading = ref(false);
@@ -43,6 +49,7 @@ async function load() {
   }
 }
 onMounted(load);
+watch(() => tokens.value.length, () => nextTick(recalc));
 
 function openCreate() {
   form.value = { name: '', role: 'viewer' };
@@ -98,8 +105,9 @@ async function doDelete() {
       <code class="d-block mono mt-2">Authorization: Bearer hmo_…&#10;X-Helmio-Api-Key: hmo_…</code>
     </v-alert>
 
+    <div ref="wrap">
     <v-card variant="flat" class="panel-card">
-      <v-data-table :headers="headers" :items="tokens" :loading="loading" item-value="id" density="comfortable" hover hide-default-footer :items-per-page="-1" class="bg-transparent">
+      <v-data-table :headers="headers" :items="tokens" :loading="loading" item-value="id" density="comfortable" hover fixed-header :height="height" hide-default-footer :items-per-page="-1" class="bg-transparent">
         <template #[`item.name`]="{ item }">
           <div class="d-flex align-center ga-2"><v-icon icon="mdi-key-variant" size="18" /><span class="font-weight-medium">{{ item.name }}</span></div>
         </template>
@@ -120,38 +128,41 @@ async function doDelete() {
         </template>
       </v-data-table>
     </v-card>
+    </div>
 
-    <!-- Create / reveal dialog -->
-    <v-dialog v-model="dialog" max-width="520">
-      <v-card rounded="lg">
-        <v-card-title>{{ created ? t('tokens.createdTitle') : t('tokens.add') }}</v-card-title>
-        <v-card-text>
-          <template v-if="!created">
-            <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="mb-3" :text="formError" />
-            <v-text-field v-model="form.name" :label="t('tokens.name')" variant="outlined" density="comfortable" class="mb-2" autocomplete="off" />
-            <v-select v-model="form.role" :items="ROLES" :label="t('tokens.role')" variant="outlined" density="comfortable">
-              <template #selection="{ item }">{{ t(`roles.${item.value}`) }}</template>
-              <template #item="{ item, props: p }"><v-list-item v-bind="p" :title="t(`roles.${item.value}`)" :subtitle="t(`roles.${item.value}_desc`)" /></template>
-            </v-select>
-          </template>
-          <template v-else>
-            <v-alert type="warning" variant="tonal" density="compact" class="mb-3" :text="t('tokens.revealWarning')" />
-            <div class="d-flex align-center ga-2">
-              <code class="mono token-reveal flex-grow-1">{{ created.token }}</code>
-              <v-btn icon="mdi-content-copy" variant="tonal" @click="copyToken" />
-            </div>
-          </template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <template v-if="!created">
-            <v-btn variant="text" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
-            <v-btn color="primary" variant="flat" :loading="saving" :disabled="!form.name.trim()" @click="save">{{ t('tokens.generate') }}</v-btn>
-          </template>
-          <v-btn v-else color="primary" variant="flat" @click="dialog = false">{{ t('tokens.done') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Create / reveal form (slide-over) -->
+    <SidePanel
+      v-model="dialog"
+      :title="created ? t('tokens.createdTitle') : t('tokens.add')"
+      :icon="created ? 'mdi-key-star' : 'mdi-key-plus'"
+      :width="520"
+    >
+      <div class="pa-4">
+        <template v-if="!created">
+          <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="mb-3" :text="formError" />
+          <v-text-field v-model="form.name" :label="t('tokens.name')" variant="outlined" density="comfortable" class="mb-2" autocomplete="off" />
+          <v-select v-model="form.role" :items="ROLES" :label="t('tokens.role')" variant="outlined" density="comfortable">
+            <template #selection="{ item }">{{ t(`roles.${item.value}`) }}</template>
+            <template #item="{ item, props: p }"><v-list-item v-bind="p" :title="t(`roles.${item.value}`)" :subtitle="t(`roles.${item.value}_desc`)" /></template>
+          </v-select>
+        </template>
+        <template v-else>
+          <v-alert type="warning" variant="tonal" density="compact" class="mb-3" :text="t('tokens.revealWarning')" />
+          <div class="d-flex align-center ga-2">
+            <code class="mono token-reveal flex-grow-1">{{ created.token }}</code>
+            <v-btn icon="mdi-content-copy" variant="tonal" @click="copyToken" />
+          </div>
+        </template>
+      </div>
+      <template #footer="{ close }">
+        <v-spacer />
+        <template v-if="!created">
+          <v-btn variant="text" @click="close">{{ t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="saving" :disabled="!form.name.trim()" @click="save">{{ t('tokens.generate') }}</v-btn>
+        </template>
+        <v-btn v-else color="primary" variant="flat" @click="close">{{ t('tokens.done') }}</v-btn>
+      </template>
+    </SidePanel>
 
     <v-dialog :model-value="!!confirmDelete" max-width="420" @update:model-value="confirmDelete = null">
       <v-card rounded="lg">
@@ -170,7 +181,7 @@ async function doDelete() {
 </template>
 
 <style scoped>
-.panel-card { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
+.panel-card { border: 0px; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; }
 .token-reveal { background: rgba(var(--v-theme-on-surface), 0.06); padding: 8px 10px; border-radius: 6px; word-break: break-all; }
 </style>

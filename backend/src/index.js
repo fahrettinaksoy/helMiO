@@ -14,6 +14,7 @@ import { channelsRouter } from './routes/channels.js';
 import { healthChecksRouter } from './routes/healthchecks.js';
 import { apiTokensRouter } from './routes/apitokens.js';
 import { fleetRouter } from './routes/fleet.js';
+import { overviewRouter } from './routes/overview.js';
 import { authenticate } from './middleware/auth.js';
 import { setupRealtime } from './realtime.js';
 import { startNotifier } from './services/notifierService.js';
@@ -38,6 +39,8 @@ app.use('/api/channels', channelsRouter);
 app.use('/api/apitokens', apiTokensRouter);
 // Cross-server fleet orchestration (auth enforced inside).
 app.use('/api/fleet', authenticate, fleetRouter);
+// Fleet-wide dashboard overview (metrics + health aggregate).
+app.use('/api/overview', overviewRouter);
 
 // Everything below requires a valid session; per-route RBAC is enforced inside.
 app.use('/api/servers', authenticate, serversRouter);

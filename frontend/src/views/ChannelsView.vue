@@ -1,16 +1,45 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { channelsApi } from '@/api/client';
 import { useServersStore } from '@/stores/servers';
 import PageShell from '@/components/PageShell.vue';
+import SidePanel from '@/components/SidePanel.vue';
+import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
 const serversStore = useServersStore();
 
+const wrap = ref(null);
+const { height, recalc } = useFitHeight(wrap);
+
 const channels = ref([]);
+const q = ref('');
 const loading = ref(false);
 const error = ref('');
+
+const headers = computed(() => [
+  { title: t('channels.colName'), key: 'name', sortable: true },
+  { title: t('channels.colType'), key: 'type', width: 130, sortable: true },
+  { title: t('channels.colTarget'), key: 'target', sortable: false },
+  { title: t('channels.colFilters'), key: 'filters', sortable: false },
+  { title: t('channels.colStatus'), key: 'status', width: 150, sortable: false },
+  { title: t('channels.enabledLabel'), key: 'enabled', width: 90, align: 'center', sortable: true },
+  { title: t('channels.test'), key: 'a_test', width: 80, align: 'center', sortable: false },
+  { title: t('common.edit'), key: 'a_edit', width: 80, align: 'center', sortable: false },
+  { title: t('common.delete'), key: 'a_delete', width: 80, align: 'center', sortable: false },
+]);
+
+const filteredChannels = computed(() => {
+  const term = q.value?.trim().toLowerCase();
+  if (!term) return channels.value;
+  return channels.value.filter(
+    (c) =>
+      c.name.toLowerCase().includes(term) ||
+      c.type.toLowerCase().includes(term) ||
+      targetSummary(c).toLowerCase().includes(term)
+  );
+});
 const meta = ref({ types: ['webhook', 'slack', 'discord', 'telegram', 'email'], alertTypes: ['fatal', 'flapping'] });
 const snackbar = ref({ show: false, color: 'success', text: '' });
 const testing = ref({});
@@ -50,6 +79,7 @@ async function load() {
   error.value = '';
   try {
     channels.value = await channelsApi.list();
+    nextTick(recalc);
   } catch (e) {
     error.value = e.response?.data?.error || e.message;
   } finally {
@@ -175,8 +205,25 @@ function filterSummary(ch) {
       <v-btn color="white" variant="tonal" prepend-icon="mdi-plus" @click="openCreate">{{ t('channels.add') }}</v-btn>
     </template>
 
+    <template #toolbar-actions>
+      <v-text-field
+        v-model="q"
+        :placeholder="t('channels.search')"
+        prepend-inner-icon="mdi-magnify"
+        variant="solo-filled"
+        density="compact"
+        flat
+        hide-details
+        clearable
+        rounded="lg"
+        class="ch-search"
+      />
+    </template>
+
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
+    <div ref="wrap">
+    <!-- Empty: no channels at all -->
     <v-empty-state
       v-if="!loading && !channels.length"
       icon="mdi-bell-off-outline"
@@ -186,44 +233,86 @@ function filterSummary(ch) {
       <template #actions><v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('channels.add') }}</v-btn></template>
     </v-empty-state>
 
-    <v-row v-else>
-      <v-col v-for="ch in channels" :key="ch.id" cols="12" md="6" lg="4">
-        <v-card variant="flat" class="panel-card h-100 d-flex flex-column">
-          <v-card-item>
-            <template #prepend>
-              <v-avatar :color="TYPE_META[ch.type]?.color || 'primary'" variant="tonal" rounded><v-icon :icon="typeIcon(ch.type)" /></v-avatar>
-            </template>
-            <v-card-title class="d-flex align-center">
-              {{ ch.name }}
-              <v-chip v-if="!ch.enabled" size="x-small" variant="tonal" color="grey" label class="ms-2">{{ t('channels.disabled') }}</v-chip>
-            </v-card-title>
-            <v-card-subtitle><v-chip size="x-small" variant="tonal" label>{{ ch.type }}</v-chip></v-card-subtitle>
-            <template #append>
-              <v-switch :model-value="ch.enabled" color="success" density="compact" hide-details inset @update:model-value="toggleEnabled(ch)" />
-            </template>
-          </v-card-item>
-          <v-card-text class="text-body-2 text-medium-emphasis flex-grow-1">
-            <div class="d-flex align-center ga-1 mb-1"><v-icon icon="mdi-target" size="14" /><span class="text-truncate mono">{{ targetSummary(ch) }}</span></div>
-            <div class="d-flex align-center ga-1"><v-icon icon="mdi-filter-variant" size="14" /><span>{{ filterSummary(ch) }}</span></div>
-            <div v-if="ch.lastError" class="text-error text-caption mt-2"><v-icon icon="mdi-alert" size="13" /> {{ ch.lastError }}</div>
-            <div v-else-if="ch.lastSentAt" class="text-success text-caption mt-2"><v-icon icon="mdi-check" size="13" /> {{ t('channels.lastSent', { time: new Date(ch.lastSentAt).toLocaleString() }) }}</div>
-          </v-card-text>
-          <v-divider />
-          <v-card-actions>
-            <v-btn size="small" variant="text" prepend-icon="mdi-send-check" :loading="testing[ch.id]" @click="test(ch)">{{ t('channels.test') }}</v-btn>
-            <v-spacer />
-            <v-btn size="small" icon="mdi-pencil" variant="text" @click="openEdit(ch)" />
-            <v-btn size="small" icon="mdi-delete" variant="text" color="error" @click="confirmDelete = ch" />
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Empty: no search match -->
+    <v-empty-state
+      v-else-if="channels.length && !filteredChannels.length"
+      icon="mdi-magnify-close"
+      :title="t('channels.noMatch')"
+      :text="t('channels.noMatchSub', { q })"
+    />
 
-    <!-- Create / edit dialog -->
-    <v-dialog v-model="dialog" max-width="560" scrollable>
-      <v-card rounded="lg">
-        <v-card-title>{{ editing ? t('channels.editTitle') : t('channels.add') }}</v-card-title>
-        <v-card-text>
+    <!-- Table -->
+    <v-card v-else variant="flat" class="panel-card">
+      <v-data-table
+        :headers="headers"
+        :items="filteredChannels"
+        item-value="id"
+        density="comfortable"
+        hover
+        fixed-header
+        :height="height"
+        hide-default-footer
+        :items-per-page="-1"
+        :loading="loading"
+        class="bg-transparent ch-table border-0"
+      >
+        <template #[`item.name`]="{ item }">
+          <div class="d-flex align-center ga-2">
+            <v-avatar :color="TYPE_META[item.type]?.color || 'primary'" variant="tonal" rounded size="32"><v-icon :icon="typeIcon(item.type)" size="18" /></v-avatar>
+            <span class="font-weight-medium">{{ item.name }}</span>
+            <v-chip v-if="!item.enabled" size="x-small" variant="tonal" color="grey" label>{{ t('channels.disabled') }}</v-chip>
+          </div>
+        </template>
+        <template #[`item.type`]="{ item }">
+          <v-chip size="x-small" variant="tonal" label>{{ item.type }}</v-chip>
+        </template>
+        <template #[`item.target`]="{ item }">
+          <span class="mono text-medium-emphasis text-truncate d-inline-block ch-target">{{ targetSummary(item) }}</span>
+        </template>
+        <template #[`item.filters`]="{ item }">
+          <span class="text-medium-emphasis">{{ filterSummary(item) }}</span>
+        </template>
+        <template #[`item.status`]="{ item }">
+          <v-tooltip v-if="item.lastError" :text="item.lastError" location="top">
+            <template #activator="{ props: tip }"><v-chip v-bind="tip" size="small" variant="tonal" color="error" label><v-icon start icon="mdi-alert" size="14" />{{ t('channels.statusError') }}</v-chip></template>
+          </v-tooltip>
+          <v-tooltip v-else-if="item.lastSentAt" :text="t('channels.lastSent', { time: new Date(item.lastSentAt).toLocaleString() })" location="top">
+            <template #activator="{ props: tip }"><v-chip v-bind="tip" size="small" variant="tonal" color="success" label><v-icon start icon="mdi-check" size="14" />{{ t('channels.statusOk') }}</v-chip></template>
+          </v-tooltip>
+          <span v-else class="text-caption text-medium-emphasis">{{ t('channels.statusIdle') }}</span>
+        </template>
+        <template #[`item.enabled`]="{ item }">
+          <div class="d-flex justify-center">
+            <v-switch :model-value="item.enabled" color="success" density="compact" hide-details inset @update:model-value="toggleEnabled(item)" />
+          </div>
+        </template>
+        <template #[`item.a_test`]="{ item }">
+          <v-tooltip :text="t('channels.test')" location="top">
+            <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-send-check" variant="text" :loading="testing[item.id]" @click="test(item)" /></template>
+          </v-tooltip>
+        </template>
+        <template #[`item.a_edit`]="{ item }">
+          <v-tooltip :text="t('common.edit')" location="top">
+            <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-pencil" variant="text" @click="openEdit(item)" /></template>
+          </v-tooltip>
+        </template>
+        <template #[`item.a_delete`]="{ item }">
+          <v-tooltip :text="t('common.delete')" location="top">
+            <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-delete" variant="text" color="error" @click="confirmDelete = item" /></template>
+          </v-tooltip>
+        </template>
+      </v-data-table>
+    </v-card>
+    </div>
+
+    <!-- Create / edit form (slide-over) -->
+    <SidePanel
+      v-model="dialog"
+      :title="editing ? t('channels.editTitle') : t('channels.add')"
+      :icon="editing ? 'mdi-bell-cog' : 'mdi-bell-plus'"
+      :width="560"
+    >
+      <div class="pa-4">
           <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="mb-3" :text="formError" />
 
           <v-select v-model="form.type" :items="meta.types" :label="t('channels.type')" variant="outlined" density="comfortable" :disabled="!!editing" class="mb-2">
@@ -276,14 +365,13 @@ function filterSummary(ch) {
             :hint="t('channels.alertsFilterHint')" persistent-hint
           />
           <v-switch v-model="form.enabled" :label="t('channels.enabledLabel')" color="success" density="compact" hide-details inset />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="primary" variant="flat" :loading="saving" @click="save">{{ t('common.save') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      </div>
+      <template #footer="{ close }">
+        <v-spacer />
+        <v-btn variant="text" @click="close">{{ t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" :loading="saving" @click="save">{{ t('common.save') }}</v-btn>
+      </template>
+    </SidePanel>
 
     <v-dialog :model-value="!!confirmDelete" max-width="420" @update:model-value="confirmDelete = null">
       <v-card rounded="lg">
@@ -302,6 +390,10 @@ function filterSummary(ch) {
 </template>
 
 <style scoped>
-.panel-card { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
+.panel-card { border: 0px; }
 .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; }
+.ch-search { width: 320px; max-width: 42vw; }
+/* The table scrolls inside its fitted height; the page itself stays put. */
+.ch-table :deep(thead th) { background: rgb(var(--v-theme-surface)) !important; }
+.ch-target { max-width: 320px; vertical-align: middle; }
 </style>
