@@ -239,22 +239,6 @@ npm run dev
 
 On first launch the panel greets you with a **setup** screen: you create the first **admin** user. After that you can add your servers via **Servers → Add Server**.
 
-### Run with Docker
-
-A production-style stack (backend API + nginx-served frontend) is provided via Docker Compose:
-
-```bash
-# 1) Configure secrets (recommended for production)
-cp backend/.env.example .env   # then set JWT_SECRET and HELMIO_SECRET_KEY
-
-# 2) Build and start
-docker compose up -d --build
-```
-
-- Panel: <http://localhost:8080>
-
-Persistent data (server registry, encryption key, JWT secret) lives in the `helmio-data` volume. Override the published port with `HELMIO_PORT` and the allowed browser origin with `CORS_ORIGIN`.
-
 ### Useful scripts (root `package.json`)
 
 | Command                | Function                                           |

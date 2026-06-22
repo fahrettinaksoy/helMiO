@@ -14,8 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ESLint (flat config) + Prettier + `.editorconfig` with `lint`/`format` scripts.
 - GitHub Actions CI (lint, build and smoke tests on Node 20 & 22; Python syntax
   check for the event listener).
-- Docker support: `Dockerfile`, `docker-compose.yml` and `.dockerignore`.
-- Issue/PR templates, Dependabot configuration and `CODEOWNERS`.
+- Issue/PR templates and `CODEOWNERS`.
 
 ### Changed
 
