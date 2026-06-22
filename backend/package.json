@@ -15,7 +15,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",
-    "nanoid": "^5.0.9",
+    "nanoid": "^5.1.15",
     "nodemailer": "^9.0.1",
     "socket.io": "^4.8.1",
     "ssh2": "^1.16.0",
