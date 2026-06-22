@@ -2,7 +2,7 @@
 # Frontend image (@helmio/frontend) — built SPA served by nginx, which also
 # reverse-proxies /api and /socket.io to the backend service.
 
-FROM node:20-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
