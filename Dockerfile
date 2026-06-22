@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Backend image (@helmio/backend) — Node API + realtime server on :3001.
 
-FROM node:20-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 WORKDIR /app
 # Copy only manifests first for better layer caching.
 COPY package.json package-lock.json ./
@@ -10,7 +10,7 @@ COPY frontend/package.json ./frontend/
 COPY agent/package.json ./agent/
 RUN npm ci --omit=dev
 
-FROM node:20-bookworm-slim AS runtime
+FROM node:26-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     PORT=3001 \
     DATA_DIR=./data
