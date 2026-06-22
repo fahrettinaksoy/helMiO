@@ -25,13 +25,13 @@ environment=AGENT_PORT="8787",AGENT_TOKEN="...",SUPERVISOR_SOCKET="/var/run/supe
 
 ## Yapılandırma (.env)
 
-| Değişken | Açıklama |
-| --- | --- |
-| `AGENT_PORT` / `AGENT_HOST` | Agent'ın dinlediği adres (panel buraya bağlanır) |
-| `AGENT_TOKEN` | Paylaşılan gizli anahtar (panel `Authorization: Bearer` ile gönderir) |
-| `SUPERVISOR_SOCKET` | Yerel supervisord unix socket (ör. `/var/run/supervisor.sock`) |
-| `SUPERVISOR_HOST` / `SUPERVISOR_PORT` | Socket yerine TCP kullanılacaksa |
-| `SUPERVISOR_USER` / `SUPERVISOR_PASS` | supervisord HTTP auth (opsiyonel) |
+| Değişken                              | Açıklama                                                              |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `AGENT_PORT` / `AGENT_HOST`           | Agent'ın dinlediği adres (panel buraya bağlanır)                      |
+| `AGENT_TOKEN`                         | Paylaşılan gizli anahtar (panel `Authorization: Bearer` ile gönderir) |
+| `SUPERVISOR_SOCKET`                   | Yerel supervisord unix socket (ör. `/var/run/supervisor.sock`)        |
+| `SUPERVISOR_HOST` / `SUPERVISOR_PORT` | Socket yerine TCP kullanılacaksa                                      |
+| `SUPERVISOR_USER` / `SUPERVISOR_PASS` | supervisord HTTP auth (opsiyonel)                                     |
 
 ## API
 

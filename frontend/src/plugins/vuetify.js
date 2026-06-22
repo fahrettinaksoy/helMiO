@@ -55,9 +55,14 @@ function detectTheme() {
     // migrate the pre-rename values written by older builds
     if (saved === 'helmioLight') return 'light';
     if (saved === 'helmioDark') return 'dark';
-  } catch { /* ignore */ }
-  if (typeof window !== 'undefined' && window.matchMedia
-    && window.matchMedia('(prefers-color-scheme: light)').matches) {
+  } catch {
+    /* ignore */
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: light)').matches
+  ) {
     return 'light';
   }
   return 'dark';

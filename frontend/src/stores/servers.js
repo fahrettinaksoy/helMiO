@@ -53,7 +53,16 @@ export const useServersStore = defineStore('servers', () => {
   }
 
   return {
-    servers, methods, loading, error,
-    fetchMethods, fetchAll, create, update, remove, test, byId,
+    servers,
+    methods,
+    loading,
+    error,
+    fetchMethods,
+    fetchAll,
+    create,
+    update,
+    remove,
+    test,
+    byId,
   };
 });

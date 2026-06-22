@@ -6,11 +6,7 @@ import vuetify from './plugins/vuetify';
 import i18n from './i18n';
 import { useAuthStore } from './stores/auth';
 
-const app = createApp(App)
-  .use(createPinia())
-  .use(router)
-  .use(vuetify)
-  .use(i18n);
+const app = createApp(App).use(createPinia()).use(router).use(vuetify).use(i18n);
 
 // When any API call returns 401, drop the session and bounce to login.
 window.addEventListener('helmio:unauthorized', () => {

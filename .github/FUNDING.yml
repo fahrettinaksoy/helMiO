@@ -1,0 +1,6 @@
+# Configure sponsor buttons on the repo. Uncomment/fill the platforms you use.
+# Docs: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+github: [fahrettinaksoy]
+# ko_fi:
+# buy_me_a_coffee:
+# custom: []

@@ -34,11 +34,9 @@ const SECRET = resolveSecret();
 
 /** Sign a session token for a user. */
 export function signToken(user) {
-  return jwt.sign(
-    { sub: user.id, username: user.username, role: user.role },
-    SECRET,
-    { expiresIn: TOKEN_TTL }
-  );
+  return jwt.sign({ sub: user.id, username: user.username, role: user.role }, SECRET, {
+    expiresIn: TOKEN_TTL,
+  });
 }
 
 /** Verify a token; returns the decoded payload or null. */

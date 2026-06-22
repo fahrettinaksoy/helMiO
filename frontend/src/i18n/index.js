@@ -15,7 +15,9 @@ export function detectLocale() {
   try {
     const saved = localStorage.getItem('helmio-lang');
     if (SUPPORTED.includes(saved)) return saved;
-  } catch { /* localStorage unavailable */ }
+  } catch {
+    /* localStorage unavailable */
+  }
   const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
   if (nav.startsWith('tr')) return 'tr';
   return 'en';
@@ -49,7 +51,9 @@ export function setLocale(code) {
   syncDocumentLang(code);
   try {
     localStorage.setItem('helmio-lang', code);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export default i18n;

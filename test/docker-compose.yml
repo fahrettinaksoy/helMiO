@@ -18,11 +18,11 @@ services:
   debian:
     image: debian:trixie
     container_name: helmio-test-debian
-    command: ["tail", "-f", "/dev/null"]
+    command: ['tail', '-f', '/dev/null']
     restart: unless-stopped
 
   alpine:
     image: alpine:3.20
     container_name: helmio-test-alpine
-    command: ["tail", "-f", "/dev/null"]
+    command: ['tail', '-f', '/dev/null']
     restart: unless-stopped

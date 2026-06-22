@@ -5,7 +5,14 @@ import { useServersStore } from '@/stores/servers';
 import { useRealtimeStore } from '@/stores/realtime';
 import { useAuthStore } from '@/stores/auth';
 import { methodLabel, formatRelative, stateStyle } from '@/utils/format';
-import { overviewApi, serversApi, channelsApi, auditApi, usersApi, apiTokensApi } from '@/api/client';
+import {
+  overviewApi,
+  serversApi,
+  channelsApi,
+  auditApi,
+  usersApi,
+  apiTokensApi,
+} from '@/api/client';
 import PageShell from '@/components/PageShell.vue';
 import TrendChart from '@/components/TrendChart.vue';
 import DonutChart from '@/components/DonutChart.vue';
@@ -24,8 +31,12 @@ const { height } = useFitHeight(wrap, { bottom: 12 });
 let subscribed = [];
 function syncSubscriptions() {
   const ids = serversStore.servers.map((s) => s.id);
-  subscribed.forEach((id) => { if (!ids.includes(id)) realtime.unsubscribe(id); });
-  ids.forEach((id) => { if (!subscribed.includes(id)) realtime.subscribe(id); });
+  subscribed.forEach((id) => {
+    if (!ids.includes(id)) realtime.unsubscribe(id);
+  });
+  ids.forEach((id) => {
+    if (!subscribed.includes(id)) realtime.subscribe(id);
+  });
   subscribed = ids;
 }
 
@@ -39,23 +50,51 @@ const tokens = ref([]);
 let timer = null;
 
 async function loadOverview() {
-  try { overview.value = await overviewApi.get(60); } catch { /* keep prior */ }
+  try {
+    overview.value = await overviewApi.get(60);
+  } catch {
+    /* keep prior */
+  }
 }
 async function loadVersions() {
-  const entries = await Promise.all(serversStore.servers.map(async (s) => {
-    try { return (await serversApi.daemon(s.id)).version; } catch { return null; }
-  }));
+  const entries = await Promise.all(
+    serversStore.servers.map(async (s) => {
+      try {
+        return (await serversApi.daemon(s.id)).version;
+      } catch {
+        return null;
+      }
+    }),
+  );
   const counts = {};
-  for (const v of entries) { if (v) counts[v] = (counts[v] || 0) + 1; }
+  for (const v of entries) {
+    if (v) counts[v] = (counts[v] || 0) + 1;
+  }
   versions.value = counts;
 }
 async function loadAdmin() {
   if (!auth.isAdmin) return;
   loadVersions();
-  try { channels.value = await channelsApi.list(); } catch { /* ignore */ }
-  try { auditItems.value = (await auditApi.query({ limit: 200 })).items || []; } catch { /* ignore */ }
-  try { users.value = await usersApi.list(); } catch { /* ignore */ }
-  try { tokens.value = await apiTokensApi.list(); } catch { /* ignore */ }
+  try {
+    channels.value = await channelsApi.list();
+  } catch {
+    /* ignore */
+  }
+  try {
+    auditItems.value = (await auditApi.query({ limit: 200 })).items || [];
+  } catch {
+    /* ignore */
+  }
+  try {
+    users.value = await usersApi.list();
+  } catch {
+    /* ignore */
+  }
+  try {
+    tokens.value = await apiTokensApi.list();
+  } catch {
+    /* ignore */
+  }
 }
 
 const refreshing = ref(false);
@@ -86,17 +125,27 @@ watch(() => serversStore.servers.map((s) => s.id).join(','), syncSubscriptions);
 
 // ---- aggregate figures ----
 const agg = computed(() => {
-  let total = 0, running = 0, stopped = 0, fatal = 0, other = 0, online = 0;
+  let total = 0,
+    running = 0,
+    stopped = 0,
+    fatal = 0,
+    other = 0,
+    online = 0;
   for (const s of serversStore.servers) {
     const snap = realtime.snapshots[s.id];
     if (!snap) continue;
     online += 1;
-    total += snap.summary.total; running += snap.summary.running;
-    stopped += snap.summary.stopped; fatal += snap.summary.fatal; other += snap.summary.other;
+    total += snap.summary.total;
+    running += snap.summary.running;
+    stopped += snap.summary.stopped;
+    fatal += snap.summary.fatal;
+    other += snap.summary.other;
   }
   return { servers: serversStore.servers.length, online, total, running, stopped, fatal, other };
 });
-const healthPct = computed(() => (agg.value.total ? Math.round((agg.value.running / agg.value.total) * 100) : 0));
+const healthPct = computed(() =>
+  agg.value.total ? Math.round((agg.value.running / agg.value.total) * 100) : 0,
+);
 
 function segmentsOf({ running = 0, other = 0, stopped = 0, fatal = 0 }) {
   return [
@@ -109,10 +158,35 @@ function segmentsOf({ running = 0, other = 0, stopped = 0, fatal = 0 }) {
 const fleetSegments = computed(() => segmentsOf(agg.value));
 
 const kpis = computed(() => [
-  { key: 'servers', icon: 'mdi-server', color: 'primary', value: `${agg.value.online}/${agg.value.servers}`, label: t('dashboard.serversOnline') },
-  { key: 'total', icon: 'mdi-format-list-bulleted', color: 'info', value: agg.value.total, label: t('dashboard.totalProcesses') },
-  { key: 'running', icon: 'mdi-play-circle', color: 'success', value: agg.value.running, label: t('common.running') },
-  { key: 'issues', icon: 'mdi-alert-circle', color: 'error', value: agg.value.fatal, label: t('dashboard.issues'), alert: agg.value.fatal > 0 },
+  {
+    key: 'servers',
+    icon: 'mdi-server',
+    color: 'primary',
+    value: `${agg.value.online}/${agg.value.servers}`,
+    label: t('dashboard.serversOnline'),
+  },
+  {
+    key: 'total',
+    icon: 'mdi-format-list-bulleted',
+    color: 'info',
+    value: agg.value.total,
+    label: t('dashboard.totalProcesses'),
+  },
+  {
+    key: 'running',
+    icon: 'mdi-play-circle',
+    color: 'success',
+    value: agg.value.running,
+    label: t('common.running'),
+  },
+  {
+    key: 'issues',
+    icon: 'mdi-alert-circle',
+    color: 'error',
+    value: agg.value.fatal,
+    label: t('dashboard.issues'),
+    alert: agg.value.fatal > 0,
+  },
 ]);
 
 // ---- all processes flattened (for problem / consumers / unstable) ----
@@ -131,27 +205,37 @@ const problemProcesses = computed(() =>
   allProcesses.value
     .filter((p) => SEVERITY[p.statename])
     .sort((a, b) => (SEVERITY[b.statename] || 0) - (SEVERITY[a.statename] || 0))
-    .slice(0, 8)
+    .slice(0, 8),
 );
 const topConsumers = computed(() =>
   allProcesses.value
     .filter((p) => typeof p.cpu === 'number')
     .sort((a, b) => b.cpu - a.cpu)
-    .slice(0, 6)
+    .slice(0, 6),
 );
 const unstable = computed(() =>
   allProcesses.value
     .filter((p) => p.flapping || (p.restarts || 0) > 0)
     .sort((a, b) => (b.restarts || 0) - (a.restarts || 0))
-    .slice(0, 6)
+    .slice(0, 6),
 );
 
 // ---- distributions ----
-const METHOD_COLOR = { tcp: 'primary', local: 'secondary', ssh: 'info', docker: 'warning', agent: 'success' };
+const METHOD_COLOR = {
+  tcp: 'primary',
+  local: 'secondary',
+  ssh: 'info',
+  docker: 'warning',
+  agent: 'success',
+};
 const methodSegments = computed(() => {
   const counts = {};
   for (const s of serversStore.servers) counts[s.method] = (counts[s.method] || 0) + 1;
-  return Object.entries(counts).map(([m, v]) => ({ key: methodLabel(m), color: METHOD_COLOR[m] || 'grey', value: v }));
+  return Object.entries(counts).map(([m, v]) => ({
+    key: methodLabel(m),
+    color: METHOD_COLOR[m] || 'grey',
+    value: v,
+  }));
 });
 
 // ---- activity over the last 24h (hourly buckets) ----
@@ -162,7 +246,7 @@ const activity = computed(() => {
   const currentHour = new Date(now).getHours();
   // bucket i = (23 - i) hours ago; label is its clock hour-of-day
   const buckets = Array.from({ length: 24 }, (_, i) => ({
-    hour: ((currentHour - (23 - i)) % 24 + 24) % 24,
+    hour: (((currentHour - (23 - i)) % 24) + 24) % 24,
     count: 0,
   }));
   const stamps = realtime.alerts.map((a) => a.at);
@@ -177,10 +261,28 @@ const activity = computed(() => {
 const hourLabel = (h) => `${String(h).padStart(2, '0')}:00`;
 
 // ---- metrics trend + hosts ----
-const cpuSeries = computed(() => [{ name: 'CPU', color: '#f5a623', points: (overview.value?.metrics.series || []).map((s) => ({ at: s.at, v: s.cpu })) }]);
-const memSeries = computed(() => [{ name: t('dashboard.memory'), color: '#7c5cff', points: (overview.value?.metrics.series || []).map((s) => ({ at: s.at, v: s.mem })) }]);
-const hasTrend = computed(() => (overview.value?.metrics.series || []).some((s) => s.cpu != null || s.mem != null));
-const diskWarnings = computed(() => (overview.value?.metrics.hosts || []).filter((h) => h.diskPct != null && h.diskPct >= 85).sort((a, b) => b.diskPct - a.diskPct));
+const cpuSeries = computed(() => [
+  {
+    name: 'CPU',
+    color: '#f5a623',
+    points: (overview.value?.metrics.series || []).map((s) => ({ at: s.at, v: s.cpu })),
+  },
+]);
+const memSeries = computed(() => [
+  {
+    name: t('dashboard.memory'),
+    color: '#7c5cff',
+    points: (overview.value?.metrics.series || []).map((s) => ({ at: s.at, v: s.mem })),
+  },
+]);
+const hasTrend = computed(() =>
+  (overview.value?.metrics.series || []).some((s) => s.cpu != null || s.mem != null),
+);
+const diskWarnings = computed(() =>
+  (overview.value?.metrics.hosts || [])
+    .filter((h) => h.diskPct != null && h.diskPct >= 85)
+    .sort((a, b) => b.diskPct - a.diskPct),
+);
 
 // ---- recent activity (alerts) ----
 const ALERT_META = {
@@ -189,11 +291,19 @@ const ALERT_META = {
   healthcheck: { color: 'warning', icon: 'mdi-heart-broken' },
 };
 const recentAlerts = computed(() =>
-  realtime.alerts.slice().reverse().slice(0, 10).map((a) => ({
-    ...a, server: serversStore.byId(a.serverId)?.name || a.serverId, meta: ALERT_META[a.type] || { color: 'grey', icon: 'mdi-bell' },
-  }))
+  realtime.alerts
+    .slice()
+    .reverse()
+    .slice(0, 10)
+    .map((a) => ({
+      ...a,
+      server: serversStore.byId(a.serverId)?.name || a.serverId,
+      meta: ALERT_META[a.type] || { color: 'grey', icon: 'mdi-bell' },
+    })),
 );
-function alertText(a) { return t(`alert.${a.type}`, { name: a.fullName, server: a.server }); }
+function alertText(a) {
+  return t(`alert.${a.type}`, { name: a.fullName, server: a.server });
+}
 
 // ---- admin computeds ----
 const channelStatus = computed(() => ({
@@ -202,11 +312,22 @@ const channelStatus = computed(() => ({
   errors: channels.value.filter((c) => c.lastError).length,
 }));
 const actionsToday = computed(() => {
-  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
   const today = auditItems.value.filter((a) => new Date(a.at) >= start);
-  const cat = (action) => (/(start|stop|restart|signal)/.test(action) ? 'control' : /config|program/.test(action) ? 'config' : /login|user|token|channel|healthcheck|eventlistener/.test(action) ? 'admin' : 'other');
+  const cat = (action) =>
+    /(start|stop|restart|signal)/.test(action)
+      ? 'control'
+      : /config|program/.test(action)
+        ? 'config'
+        : /login|user|token|channel|healthcheck|eventlistener/.test(action)
+          ? 'admin'
+          : 'other';
   const counts = { control: 0, config: 0, admin: 0 };
-  for (const a of today) { const c = cat(a.action); if (counts[c] != null) counts[c] += 1; }
+  for (const a of today) {
+    const c = cat(a.action);
+    if (counts[c] != null) counts[c] += 1;
+  }
   return { total: today.length, ...counts };
 });
 const roleCounts = computed(() => {
@@ -224,28 +345,48 @@ const stStyle = (n) => stateStyle(n);
 </script>
 
 <template>
-  <PageShell :title="t('dashboard.title')" :subtitle="t('dashboard.subtitle')" icon="mdi-view-dashboard-outline">
+  <PageShell
+    :title="t('dashboard.title')"
+    :subtitle="t('dashboard.subtitle')"
+    icon="mdi-view-dashboard-outline"
+  >
     <template #hero-actions>
-      <v-chip color="white" variant="tonal" size="small" class="me-1">{{ t('dashboard.onlineChip', { online: agg.online, total: agg.servers }) }}</v-chip>
+      <v-chip color="white" variant="tonal" size="small" class="me-1">{{
+        t('dashboard.onlineChip', { online: agg.online, total: agg.servers })
+      }}</v-chip>
       <v-btn icon="mdi-refresh" variant="text" :loading="refreshing" @click="refresh" />
     </template>
 
     <!-- Empty state -->
-    <v-card v-if="!serversStore.servers.length && !serversStore.loading" rounded="lg" class="pa-12 text-center">
+    <v-card
+      v-if="!serversStore.servers.length && !serversStore.loading"
+      rounded="lg"
+      class="pa-12 text-center"
+    >
       <v-icon icon="mdi-server-off" size="48" class="text-medium-emphasis mb-3" />
       <div class="text-h6">{{ t('dashboard.noServers') }}</div>
       <div class="text-medium-emphasis mb-4">{{ t('dashboard.noServersSub') }}</div>
-      <v-btn color="primary" prepend-icon="mdi-plus" to="/servers">{{ t('dashboard.addServer') }}</v-btn>
+      <v-btn color="primary" prepend-icon="mdi-plus" to="/servers">{{
+        t('dashboard.addServer')
+      }}</v-btn>
     </v-card>
 
-    <div v-else ref="wrap" class="overflow-x-hidden overflow-y-auto pe-1" :style="{ height: height + 'px' }">
+    <div
+      v-else
+      ref="wrap"
+      class="overflow-x-hidden overflow-y-auto pe-1"
+      :style="{ height: height + 'px' }"
+    >
       <!-- Row 1: compact KPIs + fleet health (merged) -->
       <v-row>
         <v-col cols="12" md="4">
           <v-row dense>
             <v-col v-for="k in kpis" :key="k.key" cols="6">
               <v-card rounded="lg" hover flat class="kpi h-100" :class="{ 'kpi--alert': k.alert }">
-                <span class="kpi__accent" :style="{ background: `rgb(var(--v-theme-${k.color}))` }" />
+                <span
+                  class="kpi__accent"
+                  :style="{ background: `rgb(var(--v-theme-${k.color}))` }"
+                />
                 <div class="d-flex align-center ga-3 pa-4">
                   <v-avatar :color="k.color" variant="tonal" rounded="lg" size="42">
                     <v-icon :icon="k.icon" size="21" />
@@ -265,15 +406,34 @@ const stStyle = (n) => stateStyle(n);
               <v-avatar color="success" variant="tonal" rounded="lg" size="30" class="me-2">
                 <v-icon icon="mdi-heart-pulse" size="17" />
               </v-avatar>
-              <span class="text-subtitle-1 font-weight-medium">{{ t('dashboard.fleetHealth') }}</span>
+              <span class="text-subtitle-1 font-weight-medium">{{
+                t('dashboard.fleetHealth')
+              }}</span>
               <v-spacer />
               <div class="d-flex align-baseline ga-1">
-                <span class="health__pct" :class="healthPct >= 90 ? 'text-success' : healthPct >= 50 ? 'text-warning' : 'text-error'">{{ healthPct }}%</span>
+                <span
+                  class="health__pct"
+                  :class="
+                    healthPct >= 90
+                      ? 'text-success'
+                      : healthPct >= 50
+                        ? 'text-warning'
+                        : 'text-error'
+                  "
+                  >{{ healthPct }}%</span
+                >
                 <span class="text-caption text-medium-emphasis">{{ t('dashboard.healthy') }}</span>
               </div>
             </div>
             <div class="health__bar">
-              <div v-for="seg in fleetSegments" :key="seg.key" :style="{ width: `${(seg.value / agg.total) * 100}%`, background: `rgb(var(--v-theme-${seg.color}))` }" />
+              <div
+                v-for="seg in fleetSegments"
+                :key="seg.key"
+                :style="{
+                  width: `${(seg.value / agg.total) * 100}%`,
+                  background: `rgb(var(--v-theme-${seg.color}))`,
+                }"
+              />
             </div>
             <div class="d-flex flex-wrap ga-2 mt-3">
               <div v-for="seg in fleetSegments" :key="seg.key" class="legend-pill">
@@ -287,13 +447,32 @@ const stStyle = (n) => stateStyle(n);
       </v-row>
 
       <!-- Alerts (only when present) -->
-      <v-alert v-if="overview?.health.failingList.length" type="error" variant="tonal" density="compact" class="mt-3" icon="mdi-heart-broken">
+      <v-alert
+        v-if="overview?.health.failingList.length"
+        type="error"
+        variant="tonal"
+        density="compact"
+        class="mt-3"
+        icon="mdi-heart-broken"
+      >
         <span class="font-weight-medium">{{ t('dashboard.failingChecks') }}:</span>
-        <span v-for="f in overview.health.failingList" :key="f.serverName + f.target" class="ms-2">{{ f.serverName }}/<b>{{ f.target }}</b><span v-if="f.error" class="text-medium-emphasis"> ({{ f.error }})</span></span>
+        <span v-for="f in overview.health.failingList" :key="f.serverName + f.target" class="ms-2"
+          >{{ f.serverName }}/<b>{{ f.target }}</b
+          ><span v-if="f.error" class="text-medium-emphasis"> ({{ f.error }})</span></span
+        >
       </v-alert>
-      <v-alert v-if="diskWarnings.length" type="warning" variant="tonal" density="compact" class="mt-3" icon="mdi-harddisk">
+      <v-alert
+        v-if="diskWarnings.length"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="mt-3"
+        icon="mdi-harddisk"
+      >
         <span class="font-weight-medium">{{ t('dashboard.diskWarnings') }}:</span>
-        <span v-for="d in diskWarnings" :key="d.serverId" class="ms-2">{{ d.name }} <b>%{{ d.diskPct }}</b></span>
+        <span v-for="d in diskWarnings" :key="d.serverId" class="ms-2"
+          >{{ d.name }} <b>%{{ d.diskPct }}</b></span
+        >
       </v-alert>
 
       <!-- Insight grid: only data-bearing cards are rendered -->
@@ -303,20 +482,56 @@ const stStyle = (n) => stateStyle(n);
         <v-col cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="error" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-alert-circle" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.problemProcesses') }}</span>
-              <v-chip v-if="problemProcesses.length" size="x-small" color="error" variant="tonal" class="ms-auto">{{ problemProcesses.length }}</v-chip>
+              <v-avatar color="error" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-alert-circle" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.problemProcesses')
+              }}</span>
+              <v-chip
+                v-if="problemProcesses.length"
+                size="x-small"
+                color="error"
+                variant="tonal"
+                class="ms-auto"
+                >{{ problemProcesses.length }}</v-chip
+              >
             </div>
-            <div v-if="!problemProcesses.length" class="d-flex align-center ga-2 flex-grow-1 text-body-2 text-medium-emphasis">
-              <v-icon icon="mdi-check-circle-outline" color="success" size="20" /> {{ t('dashboard.noProblems') }}
+            <div
+              v-if="!problemProcesses.length"
+              class="d-flex align-center ga-2 flex-grow-1 text-body-2 text-medium-emphasis"
+            >
+              <v-icon icon="mdi-check-circle-outline" color="success" size="20" />
+              {{ t('dashboard.noProblems') }}
             </div>
-            <v-list v-else density="compact" nav class="pa-0 bg-transparent overflow-y-auto" style="max-height: 200px">
-              <v-list-item v-for="p in problemProcesses" :key="p.serverId + p.fullName" :to="`/servers/${p.serverId}`" class="px-1">
+            <v-list
+              v-else
+              density="compact"
+              nav
+              class="pa-0 bg-transparent overflow-y-auto"
+              style="max-height: 200px"
+            >
+              <v-list-item
+                v-for="p in problemProcesses"
+                :key="p.serverId + p.fullName"
+                :to="`/servers/${p.serverId}`"
+                class="px-1"
+              >
                 <template #prepend>
-                  <v-chip :color="stStyle(p.statename).color" size="x-small" variant="flat" label class="me-2">{{ p.statename }}</v-chip>
+                  <v-chip
+                    :color="stStyle(p.statename).color"
+                    size="x-small"
+                    variant="flat"
+                    label
+                    class="me-2"
+                    >{{ p.statename }}</v-chip
+                  >
                 </template>
                 <v-list-item-title class="text-body-2">{{ p.fullName }}</v-list-item-title>
-                <v-list-item-subtitle class="text-caption">{{ p.serverName }}<template v-if="p.spawnerr"> · {{ p.spawnerr }}</template></v-list-item-subtitle>
+                <v-list-item-subtitle class="text-caption"
+                  >{{ p.serverName
+                  }}<template v-if="p.spawnerr"> · {{ p.spawnerr }}</template></v-list-item-subtitle
+                >
               </v-list-item>
             </v-list>
           </v-card>
@@ -326,8 +541,12 @@ const stStyle = (n) => stateStyle(n);
         <v-col cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="info" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-chart-donut" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.stateDistribution') }}</span>
+              <v-avatar color="info" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-chart-donut" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.stateDistribution')
+              }}</span>
             </div>
             <div class="d-flex flex-column align-center justify-center flex-grow-1 ga-2">
               <DonutChart :segments="fleetSegments" :label="t('common.total')" :size="104" />
@@ -346,10 +565,18 @@ const stStyle = (n) => stateStyle(n);
         <v-col v-if="topConsumers.length" cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="warning" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-fire" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.topConsumers') }}</span>
+              <v-avatar color="warning" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-fire" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.topConsumers')
+              }}</span>
             </div>
-            <v-list density="compact" class="pa-0 bg-transparent overflow-y-auto" style="max-height: 200px">
+            <v-list
+              density="compact"
+              class="pa-0 bg-transparent overflow-y-auto"
+              style="max-height: 200px"
+            >
               <v-list-item v-for="p in topConsumers" :key="p.serverId + p.fullName" class="px-1">
                 <v-list-item-title class="text-body-2">{{ p.fullName }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption">{{ p.serverName }}</v-list-item-subtitle>
@@ -368,19 +595,35 @@ const stStyle = (n) => stateStyle(n);
         <v-col v-if="unstable.length" cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="warning" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-sync-alert" size="17" /></v-avatar>
+              <v-avatar color="warning" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-sync-alert" size="17"
+              /></v-avatar>
               <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.unstable') }}</span>
-              <v-chip size="x-small" color="warning" variant="tonal" class="ms-auto">{{ unstable.length }}</v-chip>
+              <v-chip size="x-small" color="warning" variant="tonal" class="ms-auto">{{
+                unstable.length
+              }}</v-chip>
             </div>
-            <v-list density="compact" nav class="pa-0 bg-transparent overflow-y-auto" style="max-height: 200px">
-              <v-list-item v-for="p in unstable" :key="p.serverId + p.fullName" :to="`/servers/${p.serverId}`" class="px-1">
+            <v-list
+              density="compact"
+              nav
+              class="pa-0 bg-transparent overflow-y-auto"
+              style="max-height: 200px"
+            >
+              <v-list-item
+                v-for="p in unstable"
+                :key="p.serverId + p.fullName"
+                :to="`/servers/${p.serverId}`"
+                class="px-1"
+              >
                 <template v-if="p.flapping" #prepend>
                   <v-icon icon="mdi-flash" size="16" color="warning" class="me-2" />
                 </template>
                 <v-list-item-title class="text-body-2">{{ p.fullName }}</v-list-item-title>
                 <v-list-item-subtitle class="text-caption">{{ p.serverName }}</v-list-item-subtitle>
                 <template #append>
-                  <span class="text-body-2 font-weight-bold">{{ t('dashboard.restarts', { n: p.restarts || 0 }) }}</span>
+                  <span class="text-body-2 font-weight-bold">{{
+                    t('dashboard.restarts', { n: p.restarts || 0 })
+                  }}</span>
                 </template>
               </v-list-item>
             </v-list>
@@ -391,8 +634,12 @@ const stStyle = (n) => stateStyle(n);
         <v-col v-if="hasTrend" cols="12" lg="6">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="primary" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-chart-line" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.fleetResources') }}</span>
+              <v-avatar color="primary" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-chart-line" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.fleetResources')
+              }}</span>
             </div>
             <div class="text-caption text-medium-emphasis">{{ t('dashboard.cpuUsage') }}</div>
             <TrendChart :series="cpuSeries" :height="60" unit="%" />
@@ -405,8 +652,12 @@ const stStyle = (n) => stateStyle(n);
         <v-col cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="secondary" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-lan-connect" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.connectionMethods') }}</span>
+              <v-avatar color="secondary" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-lan-connect" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.connectionMethods')
+              }}</span>
             </div>
             <div class="d-flex flex-column align-center justify-center flex-grow-1 ga-2">
               <DonutChart :segments="methodSegments" :label="t('nav.servers')" :size="104" />
@@ -425,17 +676,47 @@ const stStyle = (n) => stateStyle(n);
         <v-col cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="primary" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-chart-bar" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.activity24h') }}</span>
+              <v-avatar color="primary" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-chart-bar" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.activity24h')
+              }}</span>
             </div>
-            <div v-if="!activity.total" class="d-flex align-center ga-2 flex-grow-1 text-body-2 text-medium-emphasis"><v-icon icon="mdi-sleep" size="20" /> {{ t('dashboard.noActivity') }}</div>
+            <div
+              v-if="!activity.total"
+              class="d-flex align-center ga-2 flex-grow-1 text-body-2 text-medium-emphasis"
+            >
+              <v-icon icon="mdi-sleep" size="20" /> {{ t('dashboard.noActivity') }}
+            </div>
             <template v-else>
-              <div class="d-flex align-end flex-grow-1 ga-1" style="min-height: 72px; padding-top: 8px">
-                <div v-for="(b, i) in activity.buckets" :key="i" class="d-flex align-end flex-grow-1" style="min-height: 64px" :title="t('dashboard.activityBarTip', { hour: hourLabel(b.hour), n: b.count })">
-                  <div class="rounded-t" :style="{ width: '100%', minHeight: '2px', height: `${b.count ? Math.max((b.count / activity.max) * 100, 8) : 0}%`, background: b.count ? 'rgb(var(--v-theme-primary))' : 'rgba(var(--v-theme-on-surface), 0.1)' }" />
+              <div
+                class="d-flex align-end flex-grow-1 ga-1"
+                style="min-height: 72px; padding-top: 8px"
+              >
+                <div
+                  v-for="(b, i) in activity.buckets"
+                  :key="i"
+                  class="d-flex align-end flex-grow-1"
+                  style="min-height: 64px"
+                  :title="t('dashboard.activityBarTip', { hour: hourLabel(b.hour), n: b.count })"
+                >
+                  <div
+                    class="rounded-t"
+                    :style="{
+                      width: '100%',
+                      minHeight: '2px',
+                      height: `${b.count ? Math.max((b.count / activity.max) * 100, 8) : 0}%`,
+                      background: b.count
+                        ? 'rgb(var(--v-theme-primary))'
+                        : 'rgba(var(--v-theme-on-surface), 0.1)',
+                    }"
+                  />
                 </div>
               </div>
-              <div class="text-caption text-medium-emphasis mt-1">{{ t('dashboard.activityTotal', { n: activity.total }) }}</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                {{ t('dashboard.activityTotal', { n: activity.total }) }}
+              </div>
             </template>
           </v-card>
         </v-col>
@@ -444,12 +725,28 @@ const stStyle = (n) => stateStyle(n);
         <v-col v-if="overview?.health.total" cols="12" sm="6" lg="3">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="success" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-heart-pulse" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.healthChecks') }}</span>
+              <v-avatar color="success" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-heart-pulse" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.healthChecks')
+              }}</span>
             </div>
             <div class="d-flex flex-column align-center justify-center flex-grow-1">
-              <div class="text-h5 font-weight-bold" :class="overview.health.failing ? 'text-warning' : 'text-success'">{{ overview.health.passing }}<span class="text-body-1 text-disabled">/{{ overview.health.total }}</span></div>
-              <div class="text-caption text-medium-emphasis">{{ overview.health.failing ? t('dashboard.failing', { n: overview.health.failing }) : t('dashboard.passing') }}</div>
+              <div
+                class="text-h5 font-weight-bold"
+                :class="overview.health.failing ? 'text-warning' : 'text-success'"
+              >
+                {{ overview.health.passing
+                }}<span class="text-body-1 text-disabled">/{{ overview.health.total }}</span>
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{
+                  overview.health.failing
+                    ? t('dashboard.failing', { n: overview.health.failing })
+                    : t('dashboard.passing')
+                }}
+              </div>
             </div>
           </v-card>
         </v-col>
@@ -458,10 +755,18 @@ const stStyle = (n) => stateStyle(n);
         <v-col v-if="recentAlerts.length" cols="12" lg="6">
           <v-card rounded="lg" hover class="panel-card pa-4 h-100 d-flex flex-column">
             <div class="d-flex align-center ga-2 mb-2">
-              <v-avatar color="info" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-bell-outline" size="17" /></v-avatar>
-              <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.recentActivity') }}</span>
+              <v-avatar color="info" variant="tonal" rounded="lg" size="30"
+                ><v-icon icon="mdi-bell-outline" size="17"
+              /></v-avatar>
+              <span class="text-subtitle-2 font-weight-medium">{{
+                t('dashboard.recentActivity')
+              }}</span>
             </div>
-            <v-list density="compact" class="pa-0 bg-transparent overflow-y-auto" style="max-height: 200px">
+            <v-list
+              density="compact"
+              class="pa-0 bg-transparent overflow-y-auto"
+              style="max-height: 200px"
+            >
               <v-list-item v-for="a in recentAlerts" :key="a.id" class="px-1">
                 <template #prepend>
                   <v-icon :icon="a.meta.icon" :color="a.meta.color" size="16" class="me-2" />
@@ -478,37 +783,85 @@ const stStyle = (n) => stateStyle(n);
 
       <!-- Administration (admin only) -->
       <template v-if="auth.isAdmin">
-        <div class="text-overline text-medium-emphasis mt-4 mb-1">{{ t('dashboard.administration') }}</div>
+        <div class="text-overline text-medium-emphasis mt-4 mb-1">
+          {{ t('dashboard.administration') }}
+        </div>
         <v-row>
           <!-- Channels -->
           <v-col v-if="channelStatus.total" cols="12" sm="6" md="2">
-            <v-card rounded="lg" hover to="/admin/channels" class="stat-card panel-card pa-4 h-100 d-flex flex-column">
+            <v-card
+              rounded="lg"
+              hover
+              to="/admin/channels"
+              class="stat-card panel-card pa-4 h-100 d-flex flex-column"
+            >
               <span class="stat-accent" style="background: rgb(var(--v-theme-info))" />
               <div class="d-flex align-center ga-2 mb-2">
-                <v-avatar color="info" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-bell-ring" size="17" /></v-avatar>
-                <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.channels') }}</span>
-                <v-icon icon="mdi-arrow-top-right" size="15" class="ms-auto text-disabled stat-arrow" />
+                <v-avatar color="info" variant="tonal" rounded="lg" size="30"
+                  ><v-icon icon="mdi-bell-ring" size="17"
+                /></v-avatar>
+                <span class="text-subtitle-2 font-weight-medium">{{
+                  t('dashboard.channels')
+                }}</span>
+                <v-icon
+                  icon="mdi-arrow-top-right"
+                  size="15"
+                  class="ms-auto text-disabled stat-arrow"
+                />
               </div>
-              <div class="stat-num">{{ channelStatus.enabled }}<span class="text-body-1 text-disabled">/{{ channelStatus.total }}</span></div>
-              <div class="text-caption text-medium-emphasis">{{ t('dashboard.activeChannels') }}</div>
-              <div v-if="channelStatus.errors" class="d-flex align-center ga-1 mt-2 text-caption text-error"><v-icon icon="mdi-alert" size="13" /> {{ t('dashboard.deliveryError', { n: channelStatus.errors }) }}</div>
+              <div class="stat-num">
+                {{ channelStatus.enabled
+                }}<span class="text-body-1 text-disabled">/{{ channelStatus.total }}</span>
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t('dashboard.activeChannels') }}
+              </div>
+              <div
+                v-if="channelStatus.errors"
+                class="d-flex align-center ga-1 mt-2 text-caption text-error"
+              >
+                <v-icon icon="mdi-alert" size="13" />
+                {{ t('dashboard.deliveryError', { n: channelStatus.errors }) }}
+              </div>
             </v-card>
           </v-col>
 
           <!-- Actions today -->
           <v-col cols="12" sm="6" md="2">
-            <v-card rounded="lg" hover to="/admin/audit" class="stat-card panel-card pa-4 h-100 d-flex flex-column">
+            <v-card
+              rounded="lg"
+              hover
+              to="/admin/audit"
+              class="stat-card panel-card pa-4 h-100 d-flex flex-column"
+            >
               <span class="stat-accent" style="background: rgb(var(--v-theme-primary))" />
               <div class="d-flex align-center ga-2 mb-2">
-                <v-avatar color="primary" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-pulse" size="17" /></v-avatar>
-                <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.actionsToday') }}</span>
-                <v-icon icon="mdi-arrow-top-right" size="15" class="ms-auto text-disabled stat-arrow" />
+                <v-avatar color="primary" variant="tonal" rounded="lg" size="30"
+                  ><v-icon icon="mdi-pulse" size="17"
+                /></v-avatar>
+                <span class="text-subtitle-2 font-weight-medium">{{
+                  t('dashboard.actionsToday')
+                }}</span>
+                <v-icon
+                  icon="mdi-arrow-top-right"
+                  size="15"
+                  class="ms-auto text-disabled stat-arrow"
+                />
               </div>
               <div class="stat-num">{{ actionsToday.total }}</div>
               <div class="d-flex flex-wrap ga-1 mt-2">
-                <v-chip size="x-small" variant="tonal" label><b class="me-1">{{ actionsToday.control }}</b>{{ t('common.running') }}</v-chip>
-                <v-chip size="x-small" variant="tonal" label><b class="me-1">{{ actionsToday.config }}</b>config</v-chip>
-                <v-chip size="x-small" variant="tonal" label><b class="me-1">{{ actionsToday.admin }}</b>admin</v-chip>
+                <v-chip size="x-small" variant="tonal" label
+                  ><b class="me-1">{{ actionsToday.control }}</b
+                  >{{ t('common.running') }}</v-chip
+                >
+                <v-chip size="x-small" variant="tonal" label
+                  ><b class="me-1">{{ actionsToday.config }}</b
+                  >config</v-chip
+                >
+                <v-chip size="x-small" variant="tonal" label
+                  ><b class="me-1">{{ actionsToday.admin }}</b
+                  >admin</v-chip
+                >
               </div>
             </v-card>
           </v-col>
@@ -518,11 +871,19 @@ const stStyle = (n) => stateStyle(n);
             <v-card rounded="lg" hover class="stat-card panel-card pa-4 h-100 d-flex flex-column">
               <span class="stat-accent" style="background: rgb(var(--v-theme-secondary))" />
               <div class="d-flex align-center ga-2 mb-2">
-                <v-avatar color="secondary" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-tag-outline" size="17" /></v-avatar>
-                <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.supervisorVersions') }}</span>
+                <v-avatar color="secondary" variant="tonal" rounded="lg" size="30"
+                  ><v-icon icon="mdi-tag-outline" size="17"
+                /></v-avatar>
+                <span class="text-subtitle-2 font-weight-medium">{{
+                  t('dashboard.supervisorVersions')
+                }}</span>
               </div>
               <div class="d-flex flex-column ga-1">
-                <div v-for="[ver, n] in versionList" :key="ver" class="d-flex align-center justify-space-between">
+                <div
+                  v-for="[ver, n] in versionList"
+                  :key="ver"
+                  class="d-flex align-center justify-space-between"
+                >
                   <code>{{ ver }}</code>
                   <v-chip size="x-small" variant="tonal" label>{{ n }}</v-chip>
                 </div>
@@ -532,33 +893,68 @@ const stStyle = (n) => stateStyle(n);
 
           <!-- Users -->
           <v-col cols="12" sm="6" md="2">
-            <v-card rounded="lg" hover to="/admin/users" class="stat-card panel-card pa-4 h-100 d-flex flex-column">
+            <v-card
+              rounded="lg"
+              hover
+              to="/admin/users"
+              class="stat-card panel-card pa-4 h-100 d-flex flex-column"
+            >
               <span class="stat-accent" style="background: rgb(var(--v-theme-success))" />
               <div class="d-flex align-center ga-2 mb-2">
-                <v-avatar color="success" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-account-group" size="17" /></v-avatar>
+                <v-avatar color="success" variant="tonal" rounded="lg" size="30"
+                  ><v-icon icon="mdi-account-group" size="17"
+                /></v-avatar>
                 <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.users') }}</span>
-                <v-icon icon="mdi-arrow-top-right" size="15" class="ms-auto text-disabled stat-arrow" />
+                <v-icon
+                  icon="mdi-arrow-top-right"
+                  size="15"
+                  class="ms-auto text-disabled stat-arrow"
+                />
               </div>
               <div class="stat-num">{{ users.length }}</div>
               <div class="d-flex flex-wrap ga-1 mt-2">
-                <v-chip size="x-small" variant="tonal" label><b class="me-1">{{ roleCounts.admin }}</b>{{ t('roles.admin') }}</v-chip>
-                <v-chip size="x-small" variant="tonal" label><b class="me-1">{{ roleCounts.operator }}</b>{{ t('roles.operator') }}</v-chip>
-                <v-chip size="x-small" variant="tonal" label><b class="me-1">{{ roleCounts.viewer }}</b>{{ t('roles.viewer') }}</v-chip>
+                <v-chip size="x-small" variant="tonal" label
+                  ><b class="me-1">{{ roleCounts.admin }}</b
+                  >{{ t('roles.admin') }}</v-chip
+                >
+                <v-chip size="x-small" variant="tonal" label
+                  ><b class="me-1">{{ roleCounts.operator }}</b
+                  >{{ t('roles.operator') }}</v-chip
+                >
+                <v-chip size="x-small" variant="tonal" label
+                  ><b class="me-1">{{ roleCounts.viewer }}</b
+                  >{{ t('roles.viewer') }}</v-chip
+                >
               </div>
             </v-card>
           </v-col>
 
           <!-- API tokens -->
           <v-col v-if="tokenStats.total" cols="12" sm="6" md="2">
-            <v-card rounded="lg" hover to="/admin/tokens" class="stat-card panel-card pa-4 h-100 d-flex flex-column">
+            <v-card
+              rounded="lg"
+              hover
+              to="/admin/tokens"
+              class="stat-card panel-card pa-4 h-100 d-flex flex-column"
+            >
               <span class="stat-accent" style="background: rgb(var(--v-theme-warning))" />
               <div class="d-flex align-center ga-2 mb-2">
-                <v-avatar color="warning" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-key-variant" size="17" /></v-avatar>
-                <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.apiTokens') }}</span>
-                <v-icon icon="mdi-arrow-top-right" size="15" class="ms-auto text-disabled stat-arrow" />
+                <v-avatar color="warning" variant="tonal" rounded="lg" size="30"
+                  ><v-icon icon="mdi-key-variant" size="17"
+                /></v-avatar>
+                <span class="text-subtitle-2 font-weight-medium">{{
+                  t('dashboard.apiTokens')
+                }}</span>
+                <v-icon
+                  icon="mdi-arrow-top-right"
+                  size="15"
+                  class="ms-auto text-disabled stat-arrow"
+                />
               </div>
               <div class="stat-num">{{ tokenStats.total }}</div>
-              <div class="text-caption text-medium-emphasis">{{ t('dashboard.unusedTokens', { n: tokenStats.unused }) }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t('dashboard.unusedTokens', { n: tokenStats.unused }) }}
+              </div>
             </v-card>
           </v-col>
 
@@ -567,13 +963,26 @@ const stStyle = (n) => stateStyle(n);
             <v-card rounded="lg" hover class="stat-card panel-card pa-4 h-100 d-flex flex-column">
               <span class="stat-accent" style="background: rgb(var(--v-theme-success))" />
               <div class="d-flex align-center ga-2 mb-2">
-                <v-avatar color="success" variant="tonal" rounded="lg" size="30"><v-icon icon="mdi-shield-check" size="17" /></v-avatar>
-                <span class="text-subtitle-2 font-weight-medium">{{ t('dashboard.security') }}</span>
+                <v-avatar color="success" variant="tonal" rounded="lg" size="30"
+                  ><v-icon icon="mdi-shield-check" size="17"
+                /></v-avatar>
+                <span class="text-subtitle-2 font-weight-medium">{{
+                  t('dashboard.security')
+                }}</span>
               </div>
               <div class="d-flex flex-column ga-1">
-                <div class="d-flex align-center ga-2 text-body-2"><v-icon icon="mdi-check-circle" color="success" size="15" /> {{ t('dashboard.secretsEncrypted') }}</div>
-                <div class="d-flex align-center ga-2 text-body-2"><v-icon icon="mdi-check-circle" color="success" size="15" /> {{ t('dashboard.rateLimit') }}</div>
-                <div class="d-flex align-center ga-2 text-body-2"><v-icon icon="mdi-check-circle" color="success" size="15" /> {{ t('dashboard.rbac') }}</div>
+                <div class="d-flex align-center ga-2 text-body-2">
+                  <v-icon icon="mdi-check-circle" color="success" size="15" />
+                  {{ t('dashboard.secretsEncrypted') }}
+                </div>
+                <div class="d-flex align-center ga-2 text-body-2">
+                  <v-icon icon="mdi-check-circle" color="success" size="15" />
+                  {{ t('dashboard.rateLimit') }}
+                </div>
+                <div class="d-flex align-center ga-2 text-body-2">
+                  <v-icon icon="mdi-check-circle" color="success" size="15" />
+                  {{ t('dashboard.rbac') }}
+                </div>
               </div>
             </v-card>
           </v-col>
@@ -587,17 +996,27 @@ const stStyle = (n) => stateStyle(n);
 /* The two helpers Vuetify has no utility for: a flex min-width:0 truncation
    guard and a monospace run for version strings. Everything else is handled
    by Vuetify components, variants and utility classes. */
-.min-w-0 { min-width: 0; }
-code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.78rem; }
+.min-w-0 {
+  min-width: 0;
+}
+code {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+}
 
 /* ── KPI stat cards ─────────────────────────────────────────────── */
 .kpi {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
-.kpi:hover { transform: translateY(-2px); }
+.kpi:hover {
+  transform: translateY(-2px);
+}
 /* Slim colour rail down the left edge keys each metric to its status colour. */
 .kpi__accent {
   position: absolute;
@@ -628,7 +1047,10 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-si
    surface as the KPI/health cards above — keyed off the .panel-card hook. */
 .panel-card {
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 .panel-card:hover {
   transform: translateY(-2px);
@@ -637,7 +1059,10 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-si
 
 /* Administration "stat tiles": colour rail + tighter numerals, plus a nudging
    arrow on the navigable ones so they read as links. */
-.stat-card { position: relative; overflow: hidden; }
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
 .stat-accent {
   position: absolute;
   inset: 0 auto 0 0;
@@ -651,14 +1076,20 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-si
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
-.stat-arrow { transition: transform 0.18s ease, color 0.18s ease; }
+.stat-arrow {
+  transition:
+    transform 0.18s ease,
+    color 0.18s ease;
+}
 .stat-card:hover .stat-arrow {
   transform: translate(2px, -2px);
   color: rgb(var(--v-theme-primary)) !important;
 }
 
 /* ── Fleet health card ──────────────────────────────────────────── */
-.health { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
+.health {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
 .health__pct {
   font-size: 1.7rem;
   font-weight: 700;
@@ -674,7 +1105,9 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-si
   overflow: hidden;
   background: rgba(var(--v-theme-on-surface), 0.06);
 }
-.health__bar > div { transition: width 0.4s ease; }
+.health__bar > div {
+  transition: width 0.4s ease;
+}
 
 /* Shared legend chip used by the health bar + the donut cards. */
 .legend-pill {

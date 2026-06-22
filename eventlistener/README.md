@@ -31,12 +31,12 @@ Sonra: `supervisorctl reread && supervisorctl update`
 
 ## Ortam değişkenleri
 
-| Değişken | Açıklama |
-| --- | --- |
+| Değişken            | Açıklama                                                       |
+| ------------------- | -------------------------------------------------------------- |
 | `HELMIO_INGEST_URL` | Backend ingest taban URL'i, ör. `http://panel:3001/api/ingest` |
-| `HELMIO_SERVER_ID` | Sunucunun Helmio'daki kayıt id'si |
-| `HELMIO_TOKEN` | Sunucuya özel ingest token'ı (makine-makine auth) |
-| `HELMIO_TIMEOUT` | HTTP zaman aşımı (sn, varsayılan 5) |
+| `HELMIO_SERVER_ID`  | Sunucunun Helmio'daki kayıt id'si                              |
+| `HELMIO_TOKEN`      | Sunucuya özel ingest token'ı (makine-makine auth)              |
+| `HELMIO_TIMEOUT`    | HTTP zaman aşımı (sn, varsayılan 5)                            |
 
 ## Notlar
 

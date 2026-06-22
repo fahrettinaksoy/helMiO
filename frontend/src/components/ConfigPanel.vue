@@ -37,7 +37,10 @@ async function onProgramSaved() {
   emit('action', { ok: true, message: t('config.saved') });
   emit('changed');
   // refresh the edited file content
-  if (selected.value) { delete contents[selected.value]; await ensureContent(selected.value); }
+  if (selected.value) {
+    delete contents[selected.value];
+    await ensureContent(selected.value);
+  }
 }
 
 async function loadList() {
@@ -68,7 +71,9 @@ async function ensureContent(path) {
   }
 }
 
-watch(selected, (p) => { if (p) ensureContent(p); });
+watch(selected, (p) => {
+  if (p) ensureContent(p);
+});
 
 async function save(applyReload) {
   if (!selected.value) return;
@@ -95,7 +100,12 @@ function fileName(p) {
   return p.split('/').pop();
 }
 
-watch(() => props.modelValue, (open) => { if (open) loadList(); });
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) loadList();
+  },
+);
 </script>
 
 <template>
@@ -111,17 +121,39 @@ watch(() => props.modelValue, (open) => { if (open) loadList(); });
 
       <template v-else>
         <div class="mb-3 d-flex ga-2">
-          <v-btn size="small" variant="tonal" color="primary" prepend-icon="mdi-plus" @click="openCreate">
+          <v-btn
+            size="small"
+            variant="tonal"
+            color="primary"
+            prepend-icon="mdi-plus"
+            @click="openCreate"
+          >
             {{ t('config.addProgram') }}
           </v-btn>
-          <v-btn v-if="selected" size="small" variant="text" prepend-icon="mdi-form-select" @click="openEditAsProgram">
+          <v-btn
+            v-if="selected"
+            size="small"
+            variant="text"
+            prepend-icon="mdi-form-select"
+            @click="openEditAsProgram"
+          >
             {{ t('config.editAsProgram') }}
           </v-btn>
         </div>
 
-        <ProgramBuilder v-model="builderOpen" :server-id="serverId" :conf-dir="confDir" :edit-path="builderEditPath" @created="onProgramCreated" @saved="onProgramSaved" @action="emit('action', $event)" />
+        <ProgramBuilder
+          v-model="builderOpen"
+          :server-id="serverId"
+          :conf-dir="confDir"
+          :edit-path="builderEditPath"
+          @created="onProgramCreated"
+          @saved="onProgramSaved"
+          @action="emit('action', $event)"
+        />
 
-        <div v-if="loading" class="py-8 text-center"><v-progress-circular indeterminate color="primary" /></div>
+        <div v-if="loading" class="py-8 text-center">
+          <v-progress-circular indeterminate color="primary" />
+        </div>
         <v-alert v-else-if="!files.length" type="info" variant="tonal" :text="t('config.empty')" />
 
         <div v-else class="d-flex flex-row ga-3">
@@ -131,7 +163,9 @@ watch(() => props.modelValue, (open) => { if (open) loadList(); });
                 <v-icon icon="mdi-file-document-outline" size="18" class="me-2" />
                 <div class="text-left min-w-0">
                   <div class="text-body-2 font-weight-bold">{{ fileName(f) }}</div>
-                  <div class="text-caption text-medium-emphasis text-truncate cfg-tab-path">{{ f }}</div>
+                  <div class="text-caption text-medium-emphasis text-truncate cfg-tab-path">
+                    {{ f }}
+                  </div>
                 </div>
               </v-tab>
             </v-tabs>
@@ -149,11 +183,20 @@ watch(() => props.modelValue, (open) => { if (open) loadList(); });
     </div>
 
     <template #footer>
-      <v-btn variant="text" @click="emit('update:modelValue', false)">{{ t('common.close') }}</v-btn>
+      <v-btn variant="text" @click="emit('update:modelValue', false)">{{
+        t('common.close')
+      }}</v-btn>
       <v-spacer />
       <template v-if="supported && files.length">
         <v-btn variant="text" :loading="saving" @click="save(false)">{{ t('config.save') }}</v-btn>
-        <v-btn color="primary" variant="flat" :loading="saving" prepend-icon="mdi-reload" @click="save(true)">{{ t('config.reloadAfter') }}</v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          :loading="saving"
+          prepend-icon="mdi-reload"
+          @click="save(true)"
+          >{{ t('config.reloadAfter') }}</v-btn
+        >
       </template>
     </template>
   </SidePanel>
@@ -180,11 +223,13 @@ watch(() => props.modelValue, (open) => { if (open) loadList(); });
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px 14px;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.82rem;
   line-height: 1.5;
   resize: none;
   outline: none;
 }
-.min-w-0 { min-width: 0; }
+.min-w-0 {
+  min-width: 0;
+}
 </style>

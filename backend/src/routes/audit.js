@@ -9,7 +9,10 @@ export const auditRouter = Router();
 auditRouter.use(authenticate, requirePermission(PERMISSIONS.AUDIT_READ));
 
 // Query the audit trail (newest first) with optional filters + pagination.
-auditRouter.get('/', ah(async (req, res) => {
-  const { serverId, actorId, action, status, limit, offset } = req.query;
-  res.json(await auditStore.query({ serverId, actorId, action, status, limit, offset }));
-}));
+auditRouter.get(
+  '/',
+  ah(async (req, res) => {
+    const { serverId, actorId, action, status, limit, offset } = req.query;
+    res.json(await auditStore.query({ serverId, actorId, action, status, limit, offset }));
+  }),
+);

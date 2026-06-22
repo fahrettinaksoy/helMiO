@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a problem with Helmio
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug report! Please search existing issues first.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, ordered steps that reliably trigger the issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click '...'
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: connector
+    attributes:
+      label: Connection method
+      description: Which connector is the affected server using?
+      options:
+        - TCP XML-RPC
+        - SSH Unix socket
+        - Local
+        - Docker
+        - Helmio agent
+        - Not applicable / unsure
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Helmio version, deployment (npm / Docker), OS, Node.js version, browser.
+      placeholder: |
+        - Helmio: v0.1.0
+        - Deploy: Docker compose
+        - OS: Ubuntu 24.04
+        - Node: 20.x
+        - Browser: Chrome 126
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Backend/agent logs or browser console output. Redact secrets and tokens.
+      render: shell
+    validations:
+      required: false

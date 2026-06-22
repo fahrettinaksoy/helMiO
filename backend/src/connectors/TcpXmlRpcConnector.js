@@ -26,9 +26,7 @@ export class TcpXmlRpcConnector extends BaseConnector {
       options.basic_auth = { user: username, pass: password ?? '' };
     }
 
-    this.client = secure
-      ? xmlrpc.createSecureClient(options)
-      : xmlrpc.createClient(options);
+    this.client = secure ? xmlrpc.createSecureClient(options) : xmlrpc.createClient(options);
   }
 
   call(method, params = []) {
@@ -48,7 +46,9 @@ export class TcpXmlRpcConnector extends BaseConnector {
 /** Surface a useful message for the common failure modes. */
 function normalizeError(err) {
   if (err?.code === 'ECONNREFUSED') {
-    return new Error('Bağlantı reddedildi — supervisord açık değil veya [inet_http_server] portu yanlış.');
+    return new Error(
+      'Bağlantı reddedildi — supervisord açık değil veya [inet_http_server] portu yanlış.',
+    );
   }
   if (err?.code === 'ETIMEDOUT' || err?.code === 'EHOSTUNREACH') {
     return new Error('Sunucuya ulaşılamadı (timeout/host unreachable).');

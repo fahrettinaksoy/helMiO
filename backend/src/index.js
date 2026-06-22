@@ -77,7 +77,10 @@ setInterval(() => metricsStore.persist(), 60000).unref?.();
 httpServer.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`[helmio] FATAL: port ${config.port} is already in use by another process.`);
-    console.error('[helmio] Free it (lsof -iTCP:%d -sTCP:LISTEN) or set PORT in backend/.env to a free port.', config.port);
+    console.error(
+      '[helmio] Free it (lsof -iTCP:%d -sTCP:LISTEN) or set PORT in backend/.env to a free port.',
+      config.port,
+    );
     process.exit(1);
   }
   console.error('[helmio] server error:', err);

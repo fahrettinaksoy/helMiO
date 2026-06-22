@@ -51,10 +51,13 @@ export const changePasswordSchema = z.object({
 export const CHANNEL_TYPES = ['webhook', 'slack', 'discord', 'telegram', 'email'];
 export const ALERT_TYPES = ['fatal', 'flapping', 'healthcheck'];
 
-const filtersSchema = z.object({
-  serverIds: z.array(z.string()).optional().default([]),
-  alertTypes: z.array(z.enum(ALERT_TYPES)).optional().default([]),
-}).optional().default({ serverIds: [], alertTypes: [] });
+const filtersSchema = z
+  .object({
+    serverIds: z.array(z.string()).optional().default([]),
+    alertTypes: z.array(z.enum(ALERT_TYPES)).optional().default([]),
+  })
+  .optional()
+  .default({ serverIds: [], alertTypes: [] });
 
 // Per-type config. Kept permissive (z.object passthrough-ish) but validates the
 // fields each transport actually needs. Masked-secret placeholders ('••••••')
@@ -64,7 +67,9 @@ const masked = (s) => z.union([s, z.literal('••••••')]);
 const configByType = {
   webhook: z.object({ url: masked(z.string().url('Geçerli bir URL girin')) }),
   slack: z.object({ webhookUrl: masked(z.string().url('Geçerli bir Slack webhook URL girin')) }),
-  discord: z.object({ webhookUrl: masked(z.string().url('Geçerli bir Discord webhook URL girin')) }),
+  discord: z.object({
+    webhookUrl: masked(z.string().url('Geçerli bir Discord webhook URL girin')),
+  }),
   telegram: z.object({
     botToken: masked(z.string().min(1, 'Bot token gerekli')),
     chatId: z.string().min(1, 'Chat ID gerekli'),
@@ -117,7 +122,8 @@ export const healthCheckSchema = z
     const schema = CHECK_CONFIG[data.type] || httpCheckConfig;
     const res = schema.safeParse(data.config);
     if (!res.success) {
-      for (const issue of res.error.issues) ctx.addIssue({ ...issue, path: ['config', ...issue.path] });
+      for (const issue of res.error.issues)
+        ctx.addIssue({ ...issue, path: ['config', ...issue.path] });
     } else {
       data.config = res.data;
     }

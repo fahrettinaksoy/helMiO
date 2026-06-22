@@ -88,7 +88,10 @@ export const channelStore = {
       name: data.name,
       enabled: data.enabled ?? true,
       config: data.config || {},
-      filters: { serverIds: data.filters?.serverIds || [], alertTypes: data.filters?.alertTypes || [] },
+      filters: {
+        serverIds: data.filters?.serverIds || [],
+        alertTypes: data.filters?.alertTypes || [],
+      },
       createdAt: now,
       updatedAt: now,
       lastSentAt: null,
@@ -114,7 +117,9 @@ export const channelStore = {
       ...patch,
       id,
       config: nextConfig,
-      filters: patch.filters ? { serverIds: patch.filters.serverIds || [], alertTypes: patch.filters.alertTypes || [] } : existing.filters,
+      filters: patch.filters
+        ? { serverIds: patch.filters.serverIds || [], alertTypes: patch.filters.alertTypes || [] }
+        : existing.filters,
       updatedAt: new Date().toISOString(),
     };
     await writeAll(all);

@@ -50,7 +50,7 @@ watch(
       sudoPassword.value = '';
       diagnose();
     }
-  }
+  },
 );
 
 // derived UI state
@@ -133,23 +133,47 @@ function close() {
         <!-- status summary -->
         <v-list class="bg-transparent mb-2" density="compact">
           <v-list-item>
-            <template #prepend><v-icon :icon="diag.reachable ? 'mdi-check-circle' : 'mdi-close-circle'" :color="diag.reachable ? 'success' : 'error'" /></template>
+            <template #prepend
+              ><v-icon
+                :icon="diag.reachable ? 'mdi-check-circle' : 'mdi-close-circle'"
+                :color="diag.reachable ? 'success' : 'error'"
+            /></template>
             <v-list-item-title>{{ t('install.xmlrpcAccess') }}</v-list-item-title>
             <template #append>
-              <span class="text-medium-emphasis">{{ diag.reachable ? t('install.accessible') : t('install.notAccessible') }}</span>
+              <span class="text-medium-emphasis">{{
+                diag.reachable ? t('install.accessible') : t('install.notAccessible')
+              }}</span>
             </template>
           </v-list-item>
           <v-list-item>
             <template #prepend>
               <v-icon
-                :icon="diag.installed === true ? 'mdi-check-circle' : diag.installed === 'unknown' ? 'mdi-help-circle' : 'mdi-close-circle'"
-                :color="diag.installed === true ? 'success' : diag.installed === 'unknown' ? 'grey' : 'warning'"
+                :icon="
+                  diag.installed === true
+                    ? 'mdi-check-circle'
+                    : diag.installed === 'unknown'
+                      ? 'mdi-help-circle'
+                      : 'mdi-close-circle'
+                "
+                :color="
+                  diag.installed === true
+                    ? 'success'
+                    : diag.installed === 'unknown'
+                      ? 'grey'
+                      : 'warning'
+                "
               />
             </template>
             <v-list-item-title>{{ t('install.installed') }}</v-list-item-title>
             <template #append>
               <span class="text-medium-emphasis">
-                {{ diag.installed === true ? (diag.version || t('install.installedYes')) : diag.installed === 'unknown' ? t('common.unknown') : t('common.no') }}
+                {{
+                  diag.installed === true
+                    ? diag.version || t('install.installedYes')
+                    : diag.installed === 'unknown'
+                      ? t('common.unknown')
+                      : t('common.no')
+                }}
               </span>
             </template>
           </v-list-item>
@@ -157,21 +181,28 @@ function close() {
             <template #prepend><v-icon icon="mdi-console" /></template>
             <v-list-item-title>{{ t('install.system') }}</v-list-item-title>
             <template #append>
-              <span class="text-medium-emphasis">{{ diag.os }}<template v-if="diag.packageManager"> · {{ diag.packageManager }}</template></span>
+              <span class="text-medium-emphasis"
+                >{{ diag.os
+                }}<template v-if="diag.packageManager"> · {{ diag.packageManager }}</template></span
+              >
             </template>
           </v-list-item>
         </v-list>
 
         <!-- READY -->
         <v-alert v-if="status === 'ready'" type="success" variant="tonal" class="mt-2">
-          {{ diag.version ? t('install.readyVersion', { version: diag.version }) : t('install.ready') }}
+          {{
+            diag.version ? t('install.readyVersion', { version: diag.version }) : t('install.ready')
+          }}
         </v-alert>
 
         <!-- NO SHELL (tcp/agent) and not reachable -->
         <template v-else-if="status === 'no-shell'">
           <v-alert type="warning" variant="tonal" class="mt-2 mb-3">
             {{ t('install.noShell', { method: diag.method }) }}
-            <div v-if="diag.rpcError" class="text-caption mt-1">{{ t('install.errorLabel', { error: diag.rpcError }) }}</div>
+            <div v-if="diag.rpcError" class="text-caption mt-1">
+              {{ t('install.errorLabel', { error: diag.rpcError }) }}
+            </div>
           </v-alert>
           <v-alert type="info" variant="tonal" density="comfortable">
             <div class="text-body-2" v-html="t('install.noShellManual')" />
@@ -233,12 +264,19 @@ function close() {
         </template>
 
         <!-- result -->
-        <v-alert v-if="result && !result.ok" type="error" variant="tonal" class="mt-3" :text="result.error" />
+        <v-alert
+          v-if="result && !result.ok"
+          type="error"
+          variant="tonal"
+          class="mt-3"
+          :text="result.error"
+        />
         <v-alert v-if="result && result.ok" type="success" variant="tonal" class="mt-3">
           {{ t('install.done') }}
           <div v-if="result.inet" class="text-caption mt-1">
             {{ t('install.inetFor') }} {{ result.inet.host }}:{{ result.inet.port }} ·
-            {{ t('install.user') }} <code>{{ result.inet.username }}</code> · {{ t('install.password') }} <code>{{ result.inet.password }}</code>
+            {{ t('install.user') }} <code>{{ result.inet.username }}</code> ·
+            {{ t('install.password') }} <code>{{ result.inet.password }}</code>
             <div class="text-medium-emphasis">{{ t('install.inetNote') }}</div>
           </div>
         </v-alert>
@@ -254,7 +292,13 @@ function close() {
     </div>
 
     <template #footer>
-      <v-btn variant="text" prepend-icon="mdi-refresh" :disabled="loading || installing" @click="diagnose">{{ t('install.rediagnose') }}</v-btn>
+      <v-btn
+        variant="text"
+        prepend-icon="mdi-refresh"
+        :disabled="loading || installing"
+        @click="diagnose"
+        >{{ t('install.rediagnose') }}</v-btn
+      >
       <v-spacer />
       <v-btn variant="text" @click="close">{{ t('install.close') }}</v-btn>
     </template>

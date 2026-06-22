@@ -14,10 +14,10 @@ docker compose -f test/docker-compose.yml down      # durdur + sil
 
 İki container gelir:
 
-| Container | Dağıtım | Paket yöneticisi | Test eder |
-| --- | --- | --- | --- |
-| `helmio-test-debian` | Debian 13 (trixie) | apt-get | apt kurulum yolu |
-| `helmio-test-alpine` | Alpine 3.20 | apk | apk kurulum yolu |
+| Container            | Dağıtım            | Paket yöneticisi | Test eder        |
+| -------------------- | ------------------ | ---------------- | ---------------- |
+| `helmio-test-debian` | Debian 13 (trixie) | apt-get          | apt kurulum yolu |
+| `helmio-test-alpine` | Alpine 3.20        | apk              | apk kurulum yolu |
 
 İkisinde de supervisord **yok** ve init sistemi yok — bu yüzden Helmio kurulumdan sonra
 `supervisord`'u doğrudan başlatır, böylece XML-RPC erişimi de doğrulanabilir.
@@ -52,13 +52,13 @@ test/seed-demo.sh helmio-test-alpine # başka container
 
 Yüklenen set, panelde tüm durumları/özellikleri göstermek için çeşitli:
 
-| Program | Tür | Durum |
-| --- | --- | --- |
-| `demo-worker` | grup ×3 | RUNNING |
-| `demo-api` | grup ×2 | RUNNING |
-| `demo-db`, `demo-cache`, `demo-ticker` | tekil | RUNNING |
-| `demo-batch` | tekil (autostart=false) | STOPPED |
-| `demo-flaky` | tekil (sürekli çöker) | BACKOFF → **flapping** |
+| Program                                | Tür                     | Durum                  |
+| -------------------------------------- | ----------------------- | ---------------------- |
+| `demo-worker`                          | grup ×3                 | RUNNING                |
+| `demo-api`                             | grup ×2                 | RUNNING                |
+| `demo-db`, `demo-cache`, `demo-ticker` | tekil                   | RUNNING                |
+| `demo-batch`                           | tekil (autostart=false) | STOPPED                |
+| `demo-flaky`                           | tekil (sürekli çöker)   | BACKOFF → **flapping** |
 
 Böylece durum filtreleri, restart sayacı, **flapping** rozeti, grup işlemleri ve
 CPU/bellek kolonları gerçek veriyle görünür.

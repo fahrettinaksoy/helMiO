@@ -21,13 +21,15 @@ const circ = computed(() => 2 * Math.PI * radius.value);
 const arcs = computed(() => {
   if (!total.value) return [];
   let offset = 0;
-  return props.segments.filter((s) => s.value > 0).map((s) => {
-    const frac = s.value / total.value;
-    const len = frac * circ.value;
-    const arc = { color: s.color, dash: `${len} ${circ.value - len}`, offset: -offset };
-    offset += len;
-    return arc;
-  });
+  return props.segments
+    .filter((s) => s.value > 0)
+    .map((s) => {
+      const frac = s.value / total.value;
+      const len = frac * circ.value;
+      const arc = { color: s.color, dash: `${len} ${circ.value - len}`, offset: -offset };
+      offset += len;
+      return arc;
+    });
 });
 </script>
 
@@ -36,14 +38,22 @@ const arcs = computed(() => {
     <svg :viewBox="`0 0 ${size} ${size}`" :width="size" :height="size">
       <g :transform="`rotate(-90 ${size / 2} ${size / 2})`">
         <circle
-          :cx="size / 2" :cy="size / 2" :r="radius"
-          fill="none" :stroke-width="thickness"
+          :cx="size / 2"
+          :cy="size / 2"
+          :r="radius"
+          fill="none"
+          :stroke-width="thickness"
           class="track"
         />
         <circle
-          v-for="(a, i) in arcs" :key="i"
-          :cx="size / 2" :cy="size / 2" :r="radius"
-          fill="none" :stroke-width="thickness" stroke-linecap="butt"
+          v-for="(a, i) in arcs"
+          :key="i"
+          :cx="size / 2"
+          :cy="size / 2"
+          :r="radius"
+          fill="none"
+          :stroke-width="thickness"
+          stroke-linecap="butt"
           :stroke="`rgb(var(--v-theme-${a.color}))`"
           :stroke-dasharray="a.dash"
           :stroke-dashoffset="a.offset"
@@ -58,8 +68,13 @@ const arcs = computed(() => {
 </template>
 
 <style scoped>
-.donut { position: relative; flex: 0 0 auto; }
-.track { stroke: rgba(var(--v-theme-on-surface), 0.08); }
+.donut {
+  position: relative;
+  flex: 0 0 auto;
+}
+.track {
+  stroke: rgba(var(--v-theme-on-surface), 0.08);
+}
 .donut-center {
   position: absolute;
   inset: 0;
@@ -69,6 +84,12 @@ const arcs = computed(() => {
   justify-content: center;
   line-height: 1.1;
 }
-.donut-total { font-size: 1.5rem; font-weight: 700; }
-.donut-label { font-size: 0.66rem; color: rgba(var(--v-theme-on-surface), 0.6); }
+.donut-total {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.donut-label {
+  font-size: 0.66rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
 </style>

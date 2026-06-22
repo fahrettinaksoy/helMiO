@@ -45,7 +45,10 @@ async function send() {
   sending.value = true;
   try {
     await processesApi.signal(props.serverId, props.process.fullName, signal.value);
-    emit('action', { ok: true, message: t('detail.signalSent', { sig: signal.value, name: props.process.fullName }) });
+    emit('action', {
+      ok: true,
+      message: t('detail.signalSent', { sig: signal.value, name: props.process.fullName }),
+    });
   } catch (e) {
     emit('action', { ok: false, message: e.response?.data?.error || e.message });
   } finally {
@@ -86,7 +89,9 @@ function close() {
         <v-list-item v-for="r in rows" :key="r.label" class="px-0">
           <v-row no-gutters>
             <v-col cols="5" class="text-body-2 text-medium-emphasis">{{ r.label }}</v-col>
-            <v-col class="text-body-2" :class="{ mono: r.mono }" style="word-break: break-all">{{ r.value }}</v-col>
+            <v-col class="text-body-2" :class="{ mono: r.mono }" style="word-break: break-all">{{
+              r.value
+            }}</v-col>
           </v-row>
         </v-list-item>
       </v-list>
@@ -103,7 +108,13 @@ function close() {
           hide-details
           style="max-width: 200px"
         />
-        <v-btn color="primary" variant="flat" :loading="sending" prepend-icon="mdi-flash" @click="send">
+        <v-btn
+          color="primary"
+          variant="flat"
+          :loading="sending"
+          prepend-icon="mdi-flash"
+          @click="send"
+        >
           {{ t('detail.send') }}
         </v-btn>
       </div>
@@ -120,7 +131,14 @@ function close() {
           class="flex-grow-1"
           @keyup.enter="sendStdin"
         />
-        <v-btn color="primary" variant="tonal" :loading="sendingStdin" :disabled="!stdin" prepend-icon="mdi-keyboard-outline" @click="sendStdin">
+        <v-btn
+          color="primary"
+          variant="tonal"
+          :loading="sendingStdin"
+          :disabled="!stdin"
+          prepend-icon="mdi-keyboard-outline"
+          @click="sendStdin"
+        >
           {{ t('detail.send') }}
         </v-btn>
       </div>
@@ -135,5 +153,8 @@ function close() {
 
 <style scoped>
 /* Monospace run for log paths — Vuetify has no monospace utility. */
-.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.78rem; }
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+}
 </style>

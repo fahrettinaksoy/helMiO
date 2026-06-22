@@ -57,7 +57,9 @@ export const useRealtimeStore = defineStore('realtime', () => {
       if (subscriptions[serverId] > 0) socket.emit('subscribe', { serverId });
     }
   });
-  socket.on('disconnect', () => { connected.value = false; });
+  socket.on('disconnect', () => {
+    connected.value = false;
+  });
 
   socket.on('snapshot', ({ serverId, snapshot, at }) => {
     detectAlerts(serverId, snapshot, at);

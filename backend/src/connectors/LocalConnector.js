@@ -28,7 +28,11 @@ export class LocalConnector extends BaseConnector {
       this.client.methodCall(method, params, (err, value) => {
         if (err) {
           if (err.code === 'ENOENT') {
-            return reject(new Error(`Socket bulunamadı: ${this.server.socketPath} (supervisord çalışıyor mu, yol doğru mu?)`));
+            return reject(
+              new Error(
+                `Socket bulunamadı: ${this.server.socketPath} (supervisord çalışıyor mu, yol doğru mu?)`,
+              ),
+            );
           }
           if (err.code === 'EACCES') {
             return reject(new Error(`Socket erişim izni yok: ${this.server.socketPath}`));
@@ -54,8 +58,14 @@ export class LocalConnector extends BaseConnector {
       const proc = spawn('sh', ['-c', command]);
       let stdout = '';
       let stderr = '';
-      proc.stdout.on('data', (d) => { stdout += d; onData?.(d.toString(), 'stdout'); });
-      proc.stderr.on('data', (d) => { stderr += d; onData?.(d.toString(), 'stderr'); });
+      proc.stdout.on('data', (d) => {
+        stdout += d;
+        onData?.(d.toString(), 'stdout');
+      });
+      proc.stderr.on('data', (d) => {
+        stderr += d;
+        onData?.(d.toString(), 'stderr');
+      });
       proc.on('error', reject);
       proc.on('close', (code) => resolve({ stdout, stderr, code: code ?? 0 }));
       if (input != null) {

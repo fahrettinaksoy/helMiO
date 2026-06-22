@@ -31,7 +31,10 @@ function filtersFor(i) {
     case 1:
       return { serverIds: [pick(SERVERS, i)], alertTypes: ['fatal'] };
     case 2:
-      return { serverIds: [pick(SERVERS, i), pick(SERVERS, i + 1)], alertTypes: ['fatal', 'flapping'] };
+      return {
+        serverIds: [pick(SERVERS, i), pick(SERVERS, i + 1)],
+        alertTypes: ['fatal', 'flapping'],
+      };
     default:
       return { serverIds: [], alertTypes: [pick(ALERTS, i)] };
   }
@@ -45,45 +48,75 @@ const defs = [];
 
 // --- Slack (9) ---
 [
-  'Slack #ops-alerts', 'Slack #incidents', 'Slack #platform', 'Slack #oncall',
-  'Slack #backend', 'Slack #infra-prod', 'Slack #infra-staging', 'Slack #db-team',
+  'Slack #ops-alerts',
+  'Slack #incidents',
+  'Slack #platform',
+  'Slack #oncall',
+  'Slack #backend',
+  'Slack #infra-prod',
+  'Slack #infra-staging',
+  'Slack #db-team',
   'Slack #noc',
 ].forEach((name, k) =>
   defs.push({
     type: 'slack',
     name,
-    config: { webhookUrl: `https://hooks.slack.com/services/T0SEED${k}AB/B0SEED${k}CD/${'x'.repeat(20)}${k}` },
+    config: {
+      webhookUrl: `https://hooks.slack.com/services/T0SEED${k}AB/B0SEED${k}CD/${'x'.repeat(20)}${k}`,
+    },
   }),
 );
 
 // --- Discord (8) ---
 [
-  'Discord Ops', 'Discord Alerts', 'Discord SRE', 'Discord Dev',
-  'Discord Prod Watch', 'Discord Staging', 'Discord Night Shift', 'Discord Escalations',
+  'Discord Ops',
+  'Discord Alerts',
+  'Discord SRE',
+  'Discord Dev',
+  'Discord Prod Watch',
+  'Discord Staging',
+  'Discord Night Shift',
+  'Discord Escalations',
 ].forEach((name, k) =>
   defs.push({
     type: 'discord',
     name,
-    config: { webhookUrl: `https://discord.com/api/webhooks/10000000000000${k}0/${'d'.repeat(24)}${k}` },
+    config: {
+      webhookUrl: `https://discord.com/api/webhooks/10000000000000${k}0/${'d'.repeat(24)}${k}`,
+    },
   }),
 );
 
 // --- Telegram (7) ---
 [
-  'Telegram Ops Bot', 'Telegram Alerts Bot', 'Telegram SRE Bot', 'Telegram On-Call',
-  'Telegram Infra', 'Telegram Critical', 'Telegram Daily Digest',
+  'Telegram Ops Bot',
+  'Telegram Alerts Bot',
+  'Telegram SRE Bot',
+  'Telegram On-Call',
+  'Telegram Infra',
+  'Telegram Critical',
+  'Telegram Daily Digest',
 ].forEach((name, k) =>
   defs.push({
     type: 'telegram',
     name,
-    config: { botToken: `70000000${k}:AAH-seed-token-${'t'.repeat(16)}${k}`, chatId: `-100123456${100 + k}` },
+    config: {
+      botToken: `70000000${k}:AAH-seed-token-${'t'.repeat(16)}${k}`,
+      chatId: `-100123456${100 + k}`,
+    },
   }),
 );
 
 // --- Webhook (8) ---
 [
-  'PagerDuty Webhook', 'Opsgenie Webhook', 'Generic Webhook A', 'Generic Webhook B',
-  'Datadog Events', 'Grafana OnCall', 'Internal Bus', 'Audit Sink',
+  'PagerDuty Webhook',
+  'Opsgenie Webhook',
+  'Generic Webhook A',
+  'Generic Webhook B',
+  'Datadog Events',
+  'Grafana OnCall',
+  'Internal Bus',
+  'Audit Sink',
 ].forEach((name, k) =>
   defs.push({
     type: 'webhook',

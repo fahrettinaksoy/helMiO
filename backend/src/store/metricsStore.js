@@ -59,7 +59,10 @@ export const metricsStore = {
     };
 
     let buf = series.get(serverId);
-    if (!buf) { buf = []; series.set(serverId, buf); }
+    if (!buf) {
+      buf = [];
+      series.set(serverId, buf);
+    }
     buf.push(sample);
     if (buf.length > MAX_PER_SERVER) buf.splice(0, buf.length - MAX_PER_SERVER);
     dirty = true;
@@ -89,20 +92,42 @@ export const metricsStore = {
       for (const p of recent) {
         const b = Math.floor(p.at / bucketMs) * bucketMs;
         let m = byBucket.get(b);
-        if (!m) { m = new Map(); byBucket.set(b, m); }
+        if (!m) {
+          m = new Map();
+          byBucket.set(b, m);
+        }
         m.set(id, p); // last sample per server wins within a bucket
       }
     }
-    const fleetSeries = [...byBucket.entries()].sort((a, b) => a[0] - b[0]).map(([at, m]) => {
-      let cpu = 0, mem = 0, running = 0, total = 0, cpuHas = false, memHas = false;
-      for (const p of m.values()) {
-        if (p.cpu != null) { cpu += p.cpu; cpuHas = true; }
-        if (p.mem != null) { mem += p.mem; memHas = true; }
-        running += p.running || 0;
-        total += p.total || 0;
-      }
-      return { at, cpu: cpuHas ? Math.round(cpu * 10) / 10 : null, mem: memHas ? Math.round(mem * 10) / 10 : null, running, total };
-    });
+    const fleetSeries = [...byBucket.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([at, m]) => {
+        let cpu = 0,
+          mem = 0,
+          running = 0,
+          total = 0,
+          cpuHas = false,
+          memHas = false;
+        for (const p of m.values()) {
+          if (p.cpu != null) {
+            cpu += p.cpu;
+            cpuHas = true;
+          }
+          if (p.mem != null) {
+            mem += p.mem;
+            memHas = true;
+          }
+          running += p.running || 0;
+          total += p.total || 0;
+        }
+        return {
+          at,
+          cpu: cpuHas ? Math.round(cpu * 10) / 10 : null,
+          mem: memHas ? Math.round(mem * 10) / 10 : null,
+          running,
+          total,
+        };
+      });
     return { series: fleetSeries, hosts };
   },
 
@@ -119,7 +144,9 @@ export const metricsStore = {
       for (const [id, samples] of Object.entries(raw)) {
         if (Array.isArray(samples)) series.set(id, samples.slice(-MAX_PER_SERVER));
       }
-    } catch { /* no prior metrics */ }
+    } catch {
+      /* no prior metrics */
+    }
   },
 
   /** Persist current series to disk (only when changed). */

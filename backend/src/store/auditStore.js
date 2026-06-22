@@ -73,7 +73,11 @@ export const auditStore = {
     const lines = await readLines();
     let items = lines
       .map((l) => {
-        try { return JSON.parse(l); } catch { return null; }
+        try {
+          return JSON.parse(l);
+        } catch {
+          return null;
+        }
       })
       .filter(Boolean)
       .reverse(); // newest first

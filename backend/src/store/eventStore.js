@@ -41,7 +41,10 @@ export const eventStore = {
     };
 
     let buf = buffers.get(serverId);
-    if (!buf) { buf = []; buffers.set(serverId, buf); }
+    if (!buf) {
+      buf = [];
+      buffers.set(serverId, buf);
+    }
     buf.push(record);
     if (buf.length > MAX_PER_SERVER) buf.splice(0, buf.length - MAX_PER_SERVER);
 
@@ -69,9 +72,9 @@ export const eventStore = {
  */
 function deriveAlert(serverId, record, now) {
   const proc = record.processname
-    ? (record.groupname && record.groupname !== record.processname
-        ? `${record.groupname}:${record.processname}`
-        : record.processname)
+    ? record.groupname && record.groupname !== record.processname
+      ? `${record.groupname}:${record.processname}`
+      : record.processname
     : null;
 
   if (record.state === 'FATAL') {

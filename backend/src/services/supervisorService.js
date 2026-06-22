@@ -8,7 +8,14 @@ import { config } from '../config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Canonical listener script shipped with the repo (backend/src/services -> repo/eventlistener).
-const LISTENER_SRC = path.resolve(__dirname, '..', '..', '..', 'eventlistener', 'helmio_eventlistener.py');
+const LISTENER_SRC = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'eventlistener',
+  'helmio_eventlistener.py',
+);
 
 /**
  * High-level Supervisor operations on top of a connector. All methods take the
@@ -108,7 +115,12 @@ function shArg(s) {
 function isAllowedConfigPath(p) {
   if (typeof p !== 'string' || p.includes('..')) return false;
   if (!(p.endsWith('.conf') || p.endsWith('.ini'))) return false;
-  const prefixes = ['/etc/supervisor/', '/etc/supervisord.d/', '/etc/supervisor.d/', '/usr/local/etc/'];
+  const prefixes = [
+    '/etc/supervisor/',
+    '/etc/supervisord.d/',
+    '/etc/supervisor.d/',
+    '/usr/local/etc/',
+  ];
   const exact = ['/etc/supervisord.conf'];
   return exact.includes(p) || prefixes.some((pre) => p.startsWith(pre));
 }
@@ -162,18 +174,23 @@ export const supervisorService = {
       if (pids.length) {
         try {
           const { stdout } = await connector.exec(
-            `ps -o pid=,%cpu=,rss= -p ${pids.join(',')} 2>/dev/null || true`
+            `ps -o pid=,%cpu=,rss= -p ${pids.join(',')} 2>/dev/null || true`,
           );
           const byPid = {};
           for (const line of stdout.trim().split('\n')) {
             const parts = line.trim().split(/\s+/);
             if (parts.length >= 3) {
               const pid = Number(parts[0]);
-              byPid[pid] = { cpu: Number(parts[1]), memMb: Math.round((Number(parts[2]) / 1024) * 10) / 10 };
+              byPid[pid] = {
+                cpu: Number(parts[1]),
+                memMb: Math.round((Number(parts[2]) / 1024) * 10) / 10,
+              };
             }
           }
           processes = processes.map((p) => (byPid[p.pid] ? { ...p, ...byPid[p.pid] } : p));
-        } catch { /* ps unavailable in this environment */ }
+        } catch {
+          /* ps unavailable in this environment */
+        }
       }
     }
 
@@ -258,9 +275,8 @@ export const supervisorService = {
    * Pass the returned offset on the next call to fetch only new bytes (append).
    */
   async tailLog(server, fullName, channel = 'stdout', offset = 0, length = 16384) {
-    const method = channel === 'stderr'
-      ? 'supervisor.tailProcessStderrLog'
-      : 'supervisor.tailProcessStdoutLog';
+    const method =
+      channel === 'stderr' ? 'supervisor.tailProcessStderrLog' : 'supervisor.tailProcessStdoutLog';
     const res = await getConnector(server).call(method, [fullName, offset, length]);
     // XML-RPC returns [bytes, offset, overflow]
     const [data, newOffset, overflow] = Array.isArray(res) ? res : [res, offset, false];
@@ -325,10 +341,14 @@ export const supervisorService = {
     const toRemove = [...removed, ...changed];
     const toAdd = [...changed, ...added];
     if (toRemove.length) {
-      await c.multicall(toRemove.map((g) => ({ methodName: 'supervisor.removeProcessGroup', params: [g] })));
+      await c.multicall(
+        toRemove.map((g) => ({ methodName: 'supervisor.removeProcessGroup', params: [g] })),
+      );
     }
     if (toAdd.length) {
-      await c.multicall(toAdd.map((g) => ({ methodName: 'supervisor.addProcessGroup', params: [g] })));
+      await c.multicall(
+        toAdd.map((g) => ({ methodName: 'supervisor.addProcessGroup', params: [g] })),
+      );
     }
     return { added, changed, removed };
   },
@@ -357,7 +377,8 @@ export const supervisorService = {
   /** List supervisord config files + the conf.d dir to drop new ones into. */
   async listConfigFiles(server) {
     const c = getConnector(server);
-    if (!(c.supportsExec && c.supportsExec())) return { supported: false, files: [], confDir: null };
+    if (!(c.supportsExec && c.supportsExec()))
+      return { supported: false, files: [], confDir: null };
     const script = `
 for d in /etc/supervisor/conf.d /etc/supervisord.d /etc/supervisor.d; do
   [ -d "$d" ] && ls -1 "$d"/*.conf "$d"/*.ini 2>/dev/null
@@ -429,7 +450,10 @@ echo "CONFDIR=$(for d in /etc/supervisor/conf.d /etc/supervisord.d /etc/supervis
     if (def.autostart !== undefined) add('autostart', bool(def.autostart));
     // autorestart may be true/false/unexpected
     if (def.autorestart !== undefined && def.autorestart !== '') {
-      add('autorestart', typeof def.autorestart === 'boolean' ? bool(def.autorestart) : def.autorestart);
+      add(
+        'autorestart',
+        typeof def.autorestart === 'boolean' ? bool(def.autorestart) : def.autorestart,
+      );
     }
     add('startsecs', def.startsecs);
     add('startretries', def.startretries);
@@ -485,7 +509,10 @@ echo "CONFDIR=$(for d in /etc/supervisor/conf.d /etc/supervisord.d /etc/supervis
         inSection = true;
         continue;
       }
-      if (line.startsWith('[')) { if (inSection) break; else continue; }
+      if (line.startsWith('[')) {
+        if (inSection) break;
+        else continue;
+      }
       if (!inSection) continue;
       const eq = line.indexOf('=');
       if (eq === -1) continue;
@@ -500,7 +527,14 @@ echo "CONFDIR=$(for d in /etc/supervisor/conf.d /etc/supervisord.d /etc/supervis
     if (kv.environment) {
       for (const part of kv.environment.match(/[^,]+="(?:[^"\\]|\\.)*"|[^,]+=[^,]*/g) || []) {
         const i = part.indexOf('=');
-        if (i > 0) env.push({ key: part.slice(0, i).trim(), value: part.slice(i + 1).trim().replace(/^"|"$/g, '') });
+        if (i > 0)
+          env.push({
+            key: part.slice(0, i).trim(),
+            value: part
+              .slice(i + 1)
+              .trim()
+              .replace(/^"|"$/g, ''),
+          });
       }
     }
 
@@ -540,9 +574,8 @@ echo "CONFDIR=$(for d in /etc/supervisor/conf.d /etc/supervisord.d /etc/supervis
 
   /** Read a range of a process log (offset-based; for scroll-back history). */
   async readProcessLog(server, fullName, channel = 'stdout', offset = 0, length = 32768) {
-    const method = channel === 'stderr'
-      ? 'supervisor.readProcessStderrLog'
-      : 'supervisor.readProcessStdoutLog';
+    const method =
+      channel === 'stderr' ? 'supervisor.readProcessStderrLog' : 'supervisor.readProcessStdoutLog';
     const data = await getConnector(server).call(method, [fullName, offset, length]);
     return { data: typeof data === 'string' ? data : '', offset, length };
   },
@@ -562,14 +595,18 @@ echo "CONFDIR=$(for d in /etc/supervisor/conf.d /etc/supervisord.d /etc/supervis
     let out = '';
     let truncated = false;
     // Read forward until a short/empty chunk signals EOF or the cap is hit.
-    // eslint-disable-next-line no-constant-condition
+
     while (true) {
       const { data } = await this.readProcessLog(server, fullName, channel, offset, CHUNK);
       if (!data) break;
       out += data;
       offset += Buffer.byteLength(data, 'utf8');
       if (Buffer.byteLength(data, 'utf8') < CHUNK) break; // reached the end
-      if (out.length > maxBytes) { truncated = true; out = out.slice(-maxBytes); break; }
+      if (out.length > maxBytes) {
+        truncated = true;
+        out = out.slice(-maxBytes);
+        break;
+      }
     }
     return { data: out, truncated };
   },
@@ -586,7 +623,11 @@ echo "CORES=$(nproc 2>/dev/null || echo 1)"
 echo "UP=$(awk '{print int($1)}' /proc/uptime 2>/dev/null)"
 `;
     let out = '';
-    try { ({ stdout: out } = await c.exec(script)); } catch { return null; }
+    try {
+      ({ stdout: out } = await c.exec(script));
+    } catch {
+      return null;
+    }
     const kv = {};
     for (const line of out.split('\n')) {
       const i = line.indexOf('=');
@@ -596,10 +637,16 @@ echo "UP=$(awk '{print int($1)}' /proc/uptime 2>/dev/null)"
     const mem = (kv.MEM || '').split(',').map(Number);
     const disk = (kv.DISK || '').split(',');
     return {
-      load: load.length === 3 && !load.some(Number.isNaN) ? { one: load[0], five: load[1], fifteen: load[2] } : null,
+      load:
+        load.length === 3 && !load.some(Number.isNaN)
+          ? { one: load[0], five: load[1], fifteen: load[2] }
+          : null,
       cores: Number(kv.CORES) || null,
       mem: mem.length === 2 && !mem.some(Number.isNaN) ? { totalMb: mem[0], usedMb: mem[1] } : null,
-      disk: disk.length === 3 ? { totalKb: Number(disk[0]), usedKb: Number(disk[1]), usePct: parseInt(disk[2], 10) } : null,
+      disk:
+        disk.length === 3
+          ? { totalKb: Number(disk[0]), usedKb: Number(disk[1]), usePct: parseInt(disk[2], 10) }
+          : null,
       uptimeSec: Number(kv.UP) || null,
     };
   },
@@ -640,9 +687,10 @@ echo "UP=$(awk '{print int($1)}' /proc/uptime 2>/dev/null)"
       const detected = await this.listConfigFiles(server).catch(() => null);
       if (detected?.confDir) {
         confDir = detected.confDir;
-        scriptDir = confDir.endsWith('conf.d') || confDir.endsWith('.d')
-          ? path.posix.dirname(confDir)
-          : confDir;
+        scriptDir =
+          confDir.endsWith('conf.d') || confDir.endsWith('.d')
+            ? path.posix.dirname(confDir)
+            : confDir;
       }
     }
     const scriptPath = `${scriptDir}/helmio_eventlistener.py`;
@@ -672,7 +720,12 @@ stderr_logfile=/var/log/helmio_eventlistener.err
       };
     } catch {
       const c = getConnector(server);
-      return { installed: false, running: false, statename: null, canAutoInstall: !!(c.supportsExec && c.supportsExec()) };
+      return {
+        installed: false,
+        running: false,
+        statename: null,
+        canAutoInstall: !!(c.supportsExec && c.supportsExec()),
+      };
     }
   },
 
@@ -683,20 +736,26 @@ stderr_logfile=/var/log/helmio_eventlistener.err
   async installEventListener(server) {
     const c = getConnector(server);
     if (!(c.supportsExec && c.supportsExec())) {
-      throw new Error('Bu bağlantı türünde otomatik kurulum desteklenmiyor; manuel snippet kullanın.');
+      throw new Error(
+        'Bu bağlantı türünde otomatik kurulum desteklenmiyor; manuel snippet kullanın.',
+      );
     }
     const plan = await this.eventListenerPlan(server);
     const script = await fs.readFile(LISTENER_SRC, 'utf8');
 
     // Write the script.
     const b64 = Buffer.from(script, 'utf8').toString('base64');
-    let r = await c.exec(`printf %s ${shArg(b64)} | base64 -d > ${shArg(plan.scriptPath)} && chmod +x ${shArg(plan.scriptPath)}`);
-    if (r.code !== 0) throw new Error(r.stderr || 'Listener betiği yazılamadı (yetki gerekebilir).');
+    let r = await c.exec(
+      `printf %s ${shArg(b64)} | base64 -d > ${shArg(plan.scriptPath)} && chmod +x ${shArg(plan.scriptPath)}`,
+    );
+    if (r.code !== 0)
+      throw new Error(r.stderr || 'Listener betiği yazılamadı (yetki gerekebilir).');
 
     // Write the config.
     const cfgB64 = Buffer.from(plan.configBlock, 'utf8').toString('base64');
     r = await c.exec(`printf %s ${shArg(cfgB64)} | base64 -d > ${shArg(plan.confPath)}`);
-    if (r.code !== 0) throw new Error(r.stderr || 'Listener config yazılamadı (yetki gerekebilir).');
+    if (r.code !== 0)
+      throw new Error(r.stderr || 'Listener config yazılamadı (yetki gerekebilir).');
 
     // Apply: reread + add the new eventlistener group.
     await this.reloadConfig(server);

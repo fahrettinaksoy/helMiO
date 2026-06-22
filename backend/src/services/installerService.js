@@ -154,8 +154,10 @@ files = /etc/supervisor/conf.d/*.conf /etc/supervisor.d/*.ini
 
 function serviceScript({ init, confPath }) {
   if (init === 'systemd') {
-    return 'systemctl enable supervisor 2>/dev/null || systemctl enable supervisord 2>/dev/null; '
-      + 'systemctl restart supervisor 2>/dev/null || systemctl restart supervisord 2>/dev/null || true';
+    return (
+      'systemctl enable supervisor 2>/dev/null || systemctl enable supervisord 2>/dev/null; ' +
+      'systemctl restart supervisor 2>/dev/null || systemctl restart supervisord 2>/dev/null || true'
+    );
   }
   if (init === 'openrc') {
     return 'rc-update add supervisord default 2>/dev/null; rc-service supervisord restart 2>/dev/null || rc-service supervisord start';
@@ -190,7 +192,11 @@ export const installerService = {
           return { ok: false, error: `Agent'a ulaşılamadı: ${e.message}` };
         }
         let body = null;
-        try { body = await res.json(); } catch { /* non-json */ }
+        try {
+          body = await res.json();
+        } catch {
+          /* non-json */
+        }
         return {
           ok: true,
           channel: 'agent',
@@ -207,7 +213,9 @@ export const installerService = {
         try {
           const v = await connector.call('supervisor.getSupervisorVersion');
           supervisor = { reachable: true, version: v };
-        } catch { /* supervisor not running/installed — channel still ok */ }
+        } catch {
+          /* supervisor not running/installed — channel still ok */
+        }
         return { ok: true, channel: 'shell', supervisor };
       }
 
@@ -320,7 +328,9 @@ export const installerService = {
     if (facts.installed) {
       onLog('Supervisor zaten kurulu — yapılandırma adımına geçiliyor.');
     } else if (!installCmd) {
-      throw new Error(`Desteklenen paket yöneticisi bulunamadı (tespit: ${facts.availablePackageManagers.join(', ') || 'yok'}).`);
+      throw new Error(
+        `Desteklenen paket yöneticisi bulunamadı (tespit: ${facts.availablePackageManagers.join(', ') || 'yok'}).`,
+      );
     } else {
       onLog(`Paket yöneticisi: ${pm}. Supervisor kuruluyor...`);
       await runRaw(installCmd, `${pm} ile supervisor kurulumu`);
@@ -337,7 +347,7 @@ export const installerService = {
       onLog('\nEn iyi pratiklerle yapılandırılıyor (unix socket + 127.0.0.1:9001 inet, auth)...');
       await runRaw(
         configureScript({ confPath, isPip, inetUser, inetPassword }),
-        `yapılandırma yazılıyor (${confPath})`
+        `yapılandırma yazılıyor (${confPath})`,
       );
     }
 
@@ -347,7 +357,9 @@ export const installerService = {
 
     onLog('\n✓ Kurulum tamamlandı.');
     if (isDocker) {
-      onLog('⚠ Not: Container içine kurulum kalıcı değildir — container yeniden oluşturulursa kaybolur. Kalıcılık için supervisor\'ı imaja ekleyin.');
+      onLog(
+        "⚠ Not: Container içine kurulum kalıcı değildir — container yeniden oluşturulursa kaybolur. Kalıcılık için supervisor'ı imaja ekleyin.",
+      );
     }
     return { ok: true, inet, facts: { ...facts, installed: true, confPath } };
   },

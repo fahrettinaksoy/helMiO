@@ -25,8 +25,12 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:modelValue']);
 
-const widthPx = computed(() => (typeof props.width === 'number' ? `${props.width}px` : props.width));
-const transitionName = computed(() => (props.location === 'left' ? 'sp-slide-left' : 'sp-slide-right'));
+const widthPx = computed(() =>
+  typeof props.width === 'number' ? `${props.width}px` : props.width,
+);
+const transitionName = computed(() =>
+  props.location === 'left' ? 'sp-slide-left' : 'sp-slide-right',
+);
 
 function close() {
   if (!props.persistent) emit('update:modelValue', false);
@@ -46,7 +50,7 @@ watch(
   (open) => {
     document.documentElement.style.overflow = open ? 'hidden' : '';
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 onMounted(() => window.addEventListener('keydown', onKey));
@@ -74,7 +78,10 @@ onBeforeUnmount(() => {
         role="dialog"
         aria-modal="true"
       >
-        <header class="d-flex align-center ga-1 ps-4 pe-2 py-2 flex-grow-0" style="min-height: 56px">
+        <header
+          class="d-flex align-center ga-1 ps-4 pe-2 py-2 flex-grow-0"
+          style="min-height: 56px"
+        >
           <slot name="header" :close="close">
             <v-icon v-if="icon" :icon="icon" class="me-2" />
             <span class="text-subtitle-1 font-weight-medium text-truncate">{{ title }}</span>
@@ -105,7 +112,9 @@ onBeforeUnmount(() => {
    so without this fields stack tightly together. Applied at the panel level so
    all drawer forms (servers, users, channels, tokens) share the same spacing.
    `!important` overrides per-field mb-* utility classes for one uniform gap. */
-.sp-panel :deep(.v-input) { margin-bottom: 16px !important; }
+.sp-panel :deep(.v-input) {
+  margin-bottom: 16px !important;
+}
 
 /* Fixed-positioned overlay glue with no Vuetify-prop equivalent.
    z-index sits above layout chrome (app bar ~1005, footer) but below

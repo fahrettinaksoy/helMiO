@@ -40,55 +40,72 @@ const runSchema = z.object({
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-fleetRouter.post('/run', requirePermission(PERMISSIONS.PROCESS_CONTROL), ah(async (req, res) => {
-  const parsed = runSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: 'Doğrulama hatası', details: parsed.error.flatten() });
-  }
-  const { action, serverIds, group, strategy, delayMs, runId } = parsed.data;
-  const isGroup = action.endsWith('Group');
-  if (isGroup && !group) return res.status(400).json({ error: 'Grup adı gerekli' });
+fleetRouter.post(
+  '/run',
+  requirePermission(PERMISSIONS.PROCESS_CONTROL),
+  ah(async (req, res) => {
+    const parsed = runSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Doğrulama hatası', details: parsed.error.flatten() });
+    }
+    const { action, serverIds, group, strategy, delayMs, runId } = parsed.data;
+    const isGroup = action.endsWith('Group');
+    if (isGroup && !group) return res.status(400).json({ error: 'Grup adı gerekli' });
 
-  const emitProgress = (result) => {
-    if (runId) eventBus.emit('fleet', { runId, event: 'progress', result });
-  };
+    const emitProgress = (result) => {
+      if (runId) eventBus.emit('fleet', { runId, event: 'progress', result });
+    };
 
-  const runOne = async (serverId) => {
-    const started = Date.now();
-    const server = await serverStore.get(serverId);
-    let result;
-    if (!server) {
-      result = { serverId, name: serverId, ok: false, error: 'Sunucu bulunamadı', durationMs: 0 };
+    const runOne = async (serverId) => {
+      const started = Date.now();
+      const server = await serverStore.get(serverId);
+      let result;
+      if (!server) {
+        result = { serverId, name: serverId, ok: false, error: 'Sunucu bulunamadı', durationMs: 0 };
+      } else {
+        try {
+          await ACTIONS[action](server, group);
+          result = { serverId, name: server.name, ok: true, durationMs: Date.now() - started };
+        } catch (err) {
+          result = {
+            serverId,
+            name: server.name,
+            ok: false,
+            error: err.message,
+            durationMs: Date.now() - started,
+          };
+        }
+      }
+      emitProgress(result); // live push to the UI as each server completes
+      return result;
+    };
+
+    let results;
+    if (strategy === 'parallel') {
+      results = await Promise.all(serverIds.map(runOne));
     } else {
-      try {
-        await ACTIONS[action](server, group);
-        result = { serverId, name: server.name, ok: true, durationMs: Date.now() - started };
-      } catch (err) {
-        result = { serverId, name: server.name, ok: false, error: err.message, durationMs: Date.now() - started };
+      results = [];
+      for (let i = 0; i < serverIds.length; i += 1) {
+        results.push(await runOne(serverIds[i]));
+        if (delayMs && i < serverIds.length - 1) await sleep(delayMs);
       }
     }
-    emitProgress(result); // live push to the UI as each server completes
-    return result;
-  };
 
-  let results;
-  if (strategy === 'parallel') {
-    results = await Promise.all(serverIds.map(runOne));
-  } else {
-    results = [];
-    for (let i = 0; i < serverIds.length; i += 1) {
-      results.push(await runOne(serverIds[i]));
-      if (delayMs && i < serverIds.length - 1) await sleep(delayMs);
-    }
-  }
-
-  const okCount = results.filter((r) => r.ok).length;
-  if (runId) eventBus.emit('fleet', { runId, event: 'done', ok: okCount, total: results.length });
-  audit(req, {
-    action: 'fleet.run',
-    target: `${action}${group ? `:${group}` : ''}`,
-    status: okCount === results.length ? 'ok' : 'error',
-    detail: `${strategy} · ${okCount}/${results.length} başarılı`,
-  });
-  res.json({ action, group: group || null, strategy, results, ok: okCount, total: results.length });
-}));
+    const okCount = results.filter((r) => r.ok).length;
+    if (runId) eventBus.emit('fleet', { runId, event: 'done', ok: okCount, total: results.length });
+    audit(req, {
+      action: 'fleet.run',
+      target: `${action}${group ? `:${group}` : ''}`,
+      status: okCount === results.length ? 'ok' : 'error',
+      detail: `${strategy} · ${okCount}/${results.length} başarılı`,
+    });
+    res.json({
+      action,
+      group: group || null,
+      strategy,
+      results,
+      ok: okCount,
+      total: results.length,
+    });
+  }),
+);

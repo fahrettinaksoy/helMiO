@@ -97,7 +97,9 @@ export class DockerConnector extends BaseConnector {
     } catch (err) {
       if (err.statusCode === 404) throw new Error(`Container bulunamadı: ${this.server.container}`);
       if (err.code === 'ENOENT' || err.code === 'EACCES') {
-        throw new Error(`Docker daemon\'a erişilemiyor (${this.server.dockerSocket || this.server.dockerHost}). Helmio docker socket\'ine erişebiliyor mu?`);
+        throw new Error(
+          `Docker daemon'a erişilemiyor (${this.server.dockerSocket || this.server.dockerHost}). Helmio docker socket'ine erişebiliyor mu?`,
+        );
       }
       throw new Error(`Docker hatası: ${err.message}`);
     }
@@ -107,8 +109,16 @@ export class DockerConnector extends BaseConnector {
     let err = '';
     this.docker.modem.demuxStream(
       stream,
-      { write: (c) => { out += c.toString(); } },
-      { write: (c) => { err += c.toString(); } }
+      {
+        write: (c) => {
+          out += c.toString();
+        },
+      },
+      {
+        write: (c) => {
+          err += c.toString();
+        },
+      },
     );
     await new Promise((resolve, reject) => {
       stream.on('end', resolve);
@@ -138,8 +148,18 @@ export class DockerConnector extends BaseConnector {
     let stderr = '';
     this.docker.modem.demuxStream(
       stream,
-      { write: (c) => { stdout += c.toString(); onData?.(c.toString(), 'stdout'); } },
-      { write: (c) => { stderr += c.toString(); onData?.(c.toString(), 'stderr'); } }
+      {
+        write: (c) => {
+          stdout += c.toString();
+          onData?.(c.toString(), 'stdout');
+        },
+      },
+      {
+        write: (c) => {
+          stderr += c.toString();
+          onData?.(c.toString(), 'stderr');
+        },
+      },
     );
     if (input != null) {
       stream.write(input);
@@ -158,7 +178,7 @@ export class DockerConnector extends BaseConnector {
       case 'supervisor.getSupervisorVersion': {
         const { out, err, code } = await this.#ctl(['version']);
         if (code !== 0 || looksLikeDaemonDown(err)) {
-          throw new Error(err || 'supervisord\'a ulaşılamadı.');
+          throw new Error(err || "supervisord'a ulaşılamadı.");
         }
         return out;
       }
@@ -175,7 +195,7 @@ export class DockerConnector extends BaseConnector {
 
       case 'supervisor.getAllProcessInfo': {
         const { out, err } = await this.#ctl(['status']);
-        if (looksLikeDaemonDown(err)) throw new Error(err || 'supervisord\'a ulaşılamadı.');
+        if (looksLikeDaemonDown(err)) throw new Error(err || "supervisord'a ulaşılamadı.");
         return out.split('\n').map(parseStatusLine).filter(Boolean);
       }
 

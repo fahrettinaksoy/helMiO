@@ -11,7 +11,8 @@ export const CONNECTION_METHODS = [
     label: 'TCP XML-RPC (inet_http_server)',
     recommended: true,
     available: true,
-    description: "supervisord'un TCP portuna doğrudan XML-RPC. En verimli, en az kurulum. Uzak/WSL/Docker (port publish) için ideal.",
+    description:
+      "supervisord'un TCP portuna doğrudan XML-RPC. En verimli, en az kurulum. Uzak/WSL/Docker (port publish) için ideal.",
     fields: ['host', 'port', 'secure', 'username', 'password', 'path'],
   },
   {
@@ -19,7 +20,8 @@ export const CONNECTION_METHODS = [
     label: 'Yerel Unix Socket',
     recommended: false,
     available: true,
-    description: 'Aynı makinedeki supervisord socket\'ine port açmadan bağlanır. Yerel dev (macOS/Linux) veya socket mount edilmiş Docker için.',
+    description:
+      "Aynı makinedeki supervisord socket'ine port açmadan bağlanır. Yerel dev (macOS/Linux) veya socket mount edilmiş Docker için.",
     fields: ['socketPath', 'username', 'password', 'path'],
   },
   {
@@ -27,15 +29,30 @@ export const CONNECTION_METHODS = [
     label: 'SSH tüneli',
     recommended: false,
     available: true,
-    description: 'supervisord unix socket / localhost TCP erişimi SSH üzerinden. Port açmaya gerek yok, SSH erişimi yeterli.',
-    fields: ['sshHost', 'sshPort', 'sshUser', 'sshPassword', 'privateKey', 'target', 'socketPath', 'targetHost', 'targetPort', 'username', 'password', 'path'],
+    description:
+      'supervisord unix socket / localhost TCP erişimi SSH üzerinden. Port açmaya gerek yok, SSH erişimi yeterli.',
+    fields: [
+      'sshHost',
+      'sshPort',
+      'sshUser',
+      'sshPassword',
+      'privateKey',
+      'target',
+      'socketPath',
+      'targetHost',
+      'targetPort',
+      'username',
+      'password',
+      'path',
+    ],
   },
   {
     id: 'docker',
     label: 'Docker (exec)',
     recommended: false,
     available: true,
-    description: 'Container içindeki supervisord\'a port açmadan, docker exec ile erişir. Helmio\'nun Docker daemon\'a erişimi gerekir.',
+    description:
+      "Container içindeki supervisord'a port açmadan, docker exec ile erişir. Helmio'nun Docker daemon'a erişimi gerekir.",
     fields: ['container', 'connection', 'dockerSocket', 'dockerHost', 'dockerPort', 'confPath'],
   },
   {
@@ -43,7 +60,8 @@ export const CONNECTION_METHODS = [
     label: 'Helmio Agent',
     recommended: false,
     available: true,
-    description: 'Hedef sunucuya kurulan ajan, supervisord\'a yerelden bağlanır. NAT/firewall arkası için ideal.',
+    description:
+      "Hedef sunucuya kurulan ajan, supervisord'a yerelden bağlanır. NAT/firewall arkası için ideal.",
     fields: ['agentUrl', 'agentToken'],
   },
 ];

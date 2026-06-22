@@ -49,7 +49,10 @@ export function formatDateTime(sec) {
   if (!sec) return '—';
   const locale = i18n.global.locale.value === 'tr' ? 'tr-TR' : 'en-US';
   return new Date(sec * 1000).toLocaleString(locale, {
-    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 

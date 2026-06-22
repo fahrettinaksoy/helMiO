@@ -23,25 +23,60 @@ const defs = [];
 
 // --- viewer (18): read-only dashboards / monitoring scrapers ---
 [
-  'Grafana Reader', 'Datadog Sync', 'Status Page', 'Uptime Robot', 'Prometheus Scraper',
-  'New Relic Agent', 'Read-only Dashboard', 'Mobile App (read)', 'Slack Status Bot',
-  'Public Metrics', 'BI Export', 'QA Read Access', 'Support Portal', 'Audit Reader',
-  'Healthcheck Probe', 'Looker Connector', 'Intern Read Token', 'Demo Viewer',
+  'Grafana Reader',
+  'Datadog Sync',
+  'Status Page',
+  'Uptime Robot',
+  'Prometheus Scraper',
+  'New Relic Agent',
+  'Read-only Dashboard',
+  'Mobile App (read)',
+  'Slack Status Bot',
+  'Public Metrics',
+  'BI Export',
+  'QA Read Access',
+  'Support Portal',
+  'Audit Reader',
+  'Healthcheck Probe',
+  'Looker Connector',
+  'Intern Read Token',
+  'Demo Viewer',
 ].forEach((name) => defs.push({ name, role: ROLES.VIEWER }));
 
 // --- operator (20): CI/CD pipelines & deploy automation ---
 [
-  'GitHub Actions Deploy', 'GitLab CI Pipeline', 'Jenkins Prod', 'Jenkins Staging',
-  'CircleCI Deploy', 'ArgoCD Sync', 'Deploy Bot Prod', 'Deploy Bot Staging',
-  'Restart Cron', 'Release Pipeline', 'Canary Rollout', 'Blue-Green Switcher',
-  'Hotfix Runner', 'Nightly Build', 'Worker Scaler', 'Queue Restarter',
-  'Backend Deployer', 'Frontend Deployer', 'Migration Runner', 'Smoke Test Runner',
+  'GitHub Actions Deploy',
+  'GitLab CI Pipeline',
+  'Jenkins Prod',
+  'Jenkins Staging',
+  'CircleCI Deploy',
+  'ArgoCD Sync',
+  'Deploy Bot Prod',
+  'Deploy Bot Staging',
+  'Restart Cron',
+  'Release Pipeline',
+  'Canary Rollout',
+  'Blue-Green Switcher',
+  'Hotfix Runner',
+  'Nightly Build',
+  'Worker Scaler',
+  'Queue Restarter',
+  'Backend Deployer',
+  'Frontend Deployer',
+  'Migration Runner',
+  'Smoke Test Runner',
 ].forEach((name) => defs.push({ name, role: ROLES.OPERATOR }));
 
 // --- admin (8): infra automation / server management ---
 [
-  'Terraform Provisioner', 'Ansible Automation', 'Bootstrap Script', 'Infra Admin CLI',
-  'Server Onboarding', 'Disaster Recovery', 'Backup Orchestrator', 'Platform Admin Bot',
+  'Terraform Provisioner',
+  'Ansible Automation',
+  'Bootstrap Script',
+  'Infra Admin CLI',
+  'Server Onboarding',
+  'Disaster Recovery',
+  'Backup Orchestrator',
+  'Platform Admin Bot',
 ].forEach((name) => defs.push({ name, role: ROLES.ADMIN }));
 
 const DAY = 86_400_000;

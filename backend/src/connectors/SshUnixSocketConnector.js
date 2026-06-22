@@ -84,7 +84,12 @@ export class SshUnixSocketConnector extends BaseConnector {
   #openChannel(cb) {
     this.#connect()
       .then((conn) => {
-        const { target = 'socket', socketPath = '/var/run/supervisor.sock', targetHost = '127.0.0.1', targetPort = 9001 } = this.server;
+        const {
+          target = 'socket',
+          socketPath = '/var/run/supervisor.sock',
+          targetHost = '127.0.0.1',
+          targetPort = 9001,
+        } = this.server;
         if (target === 'tcp') {
           conn.forwardOut('127.0.0.1', 0, targetHost, Number(targetPort), (err, stream) => {
             if (err) return cb(new Error(`SSH TCP forward hatası: ${err.message}`));
@@ -92,7 +97,8 @@ export class SshUnixSocketConnector extends BaseConnector {
           });
         } else {
           conn.forwardOutStreamLocal(socketPath, (err, stream) => {
-            if (err) return cb(new Error(`SSH socket forward hatası (${socketPath}): ${err.message}`));
+            if (err)
+              return cb(new Error(`SSH socket forward hatası (${socketPath}): ${err.message}`));
             cb(null, stream);
           });
         }
@@ -127,8 +133,14 @@ export class SshUnixSocketConnector extends BaseConnector {
         if (err) return reject(err);
         let stdout = '';
         let stderr = '';
-        stream.on('data', (d) => { stdout += d; onData?.(d.toString(), 'stdout'); });
-        stream.stderr.on('data', (d) => { stderr += d; onData?.(d.toString(), 'stderr'); });
+        stream.on('data', (d) => {
+          stdout += d;
+          onData?.(d.toString(), 'stdout');
+        });
+        stream.stderr.on('data', (d) => {
+          stderr += d;
+          onData?.(d.toString(), 'stderr');
+        });
         stream.on('close', (code) => resolve({ stdout, stderr, code: code ?? 0 }));
         if (input != null) {
           stream.write(input);

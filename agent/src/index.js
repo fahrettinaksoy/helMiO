@@ -37,7 +37,10 @@ if (SUPERVISOR_SOCKET) {
   clientOptions.port = SUPERVISOR_PORT;
 }
 if (process.env.SUPERVISOR_USER) {
-  clientOptions.basic_auth = { user: process.env.SUPERVISOR_USER, pass: process.env.SUPERVISOR_PASS || '' };
+  clientOptions.basic_auth = {
+    user: process.env.SUPERVISOR_USER,
+    pass: process.env.SUPERVISOR_PASS || '',
+  };
 }
 const supervisor = xmlrpc.createClient(clientOptions);
 
@@ -75,7 +78,10 @@ app.use((req, res, next) => {
 
 app.post('/rpc', async (req, res) => {
   const { method, params = [] } = req.body || {};
-  if (typeof method !== 'string' || !method.startsWith('supervisor.') && !method.startsWith('system.')) {
+  if (
+    typeof method !== 'string' ||
+    (!method.startsWith('supervisor.') && !method.startsWith('system.'))
+  ) {
     return res.status(400).json({ error: 'Geçersiz veya izinsiz method' });
   }
   try {

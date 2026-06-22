@@ -104,7 +104,12 @@ export async function sendTest(channel) {
     title: '✅ Helmio test bildirimi',
     text: `✅ Helmio test bildirimi — "${channel.name}" kanalı çalışıyor.`,
   };
-  await dispatch(channel, msg, { type: 'test', at: Date.now(), fullName: null, serverId: null }, 'test');
+  await dispatch(
+    channel,
+    msg,
+    { type: 'test', at: Date.now(), fullName: null, serverId: null },
+    'test',
+  );
   await channelStore.markSent(channel.id, null);
   return { ok: true };
 }
@@ -125,14 +130,21 @@ async function handleAlert({ serverId, alert }) {
       await dispatch(channel, msg, { ...alert, serverId }, serverName);
       await channelStore.markSent(channel.id, null);
       auditStore.record({
-        actorName: 'notifier', action: 'notify.sent', serverId,
-        target: channel.name, detail: `${channel.type} · ${alert.type} · ${alert.fullName || ''}`,
+        actorName: 'notifier',
+        action: 'notify.sent',
+        serverId,
+        target: channel.name,
+        detail: `${channel.type} · ${alert.type} · ${alert.fullName || ''}`,
       });
     } catch (err) {
       await channelStore.markSent(channel.id, err.message);
       auditStore.record({
-        actorName: 'notifier', action: 'notify.failed', serverId, status: 'error',
-        target: channel.name, detail: `${channel.type}: ${err.message}`,
+        actorName: 'notifier',
+        action: 'notify.failed',
+        serverId,
+        status: 'error',
+        target: channel.name,
+        detail: `${channel.type}: ${err.message}`,
       });
     }
   }

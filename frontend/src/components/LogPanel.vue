@@ -55,7 +55,11 @@ async function loadOlder() {
   const start = Math.max(0, oldestOffset.value - WINDOW);
   const length = oldestOffset.value - start;
   try {
-    const res = await processesApi.readLog(props.serverId, props.process.fullName, { channel: channel.value, offset: start, length });
+    const res = await processesApi.readLog(props.serverId, props.process.fullName, {
+      channel: channel.value,
+      offset: start,
+      length,
+    });
     const before = box.value ? box.value.scrollHeight : 0;
     content.value = (res.data || '') + content.value;
     oldestOffset.value = start;
@@ -84,16 +88,36 @@ function start() {
   if (props.daemon) {
     socket.emit('log:start', { serverId: props.serverId, daemon: true });
   } else {
-    socket.emit('log:start', { serverId: props.serverId, fullName: props.process.fullName, channel: channel.value });
+    socket.emit('log:start', {
+      serverId: props.serverId,
+      fullName: props.process.fullName,
+      channel: channel.value,
+    });
   }
 }
 function stop() {
   socket.emit('log:stop');
 }
 
-watch(() => props.modelValue, (open) => (open ? start() : stop()));
-watch(channel, () => { if (props.modelValue) { stop(); start(); } });
-watch(() => props.process?.fullName, () => { if (props.modelValue) { stop(); start(); } });
+watch(
+  () => props.modelValue,
+  (open) => (open ? start() : stop()),
+);
+watch(channel, () => {
+  if (props.modelValue) {
+    stop();
+    start();
+  }
+});
+watch(
+  () => props.process?.fullName,
+  () => {
+    if (props.modelValue) {
+      stop();
+      start();
+    }
+  },
+);
 
 onMounted(() => {
   socket.on('log:chunk', onChunk);
@@ -159,7 +183,11 @@ async function download() {
   }
   downloading.value = true;
   try {
-    const blob = await processesApi.downloadLog(props.serverId, props.process.fullName, channel.value);
+    const blob = await processesApi.downloadLog(
+      props.serverId,
+      props.process.fullName,
+      channel.value,
+    );
     const name = props.process.fullName.replace(/[^A-Za-z0-9_.-]/g, '_');
     saveBlob(blob, `${name}.${channel.value}.log`);
   } catch (e) {
@@ -180,14 +208,36 @@ async function download() {
   >
     <div class="pa-4">
       <div class="d-flex align-center ga-3 mb-3 flex-wrap">
-        <v-btn-toggle v-if="!daemon" v-model="channel" mandatory variant="outlined" density="comfortable">
+        <v-btn-toggle
+          v-if="!daemon"
+          v-model="channel"
+          mandatory
+          variant="outlined"
+          density="comfortable"
+        >
           <v-btn value="stdout" size="small">stdout</v-btn>
           <v-btn value="stderr" size="small">stderr</v-btn>
         </v-btn-toggle>
-        <v-switch v-model="follow" :label="t('log.follow')" color="primary" density="compact" hide-details inset />
+        <v-switch
+          v-model="follow"
+          :label="t('log.follow')"
+          color="primary"
+          density="compact"
+          hide-details
+          inset
+        />
         <v-spacer />
-        <v-btn size="small" variant="text" prepend-icon="mdi-download" :loading="downloading" @click="download">{{ t('log.download') }}</v-btn>
-        <v-btn size="small" variant="tonal" color="error" prepend-icon="mdi-broom" @click="clear">{{ t('log.clear') }}</v-btn>
+        <v-btn
+          size="small"
+          variant="text"
+          prepend-icon="mdi-download"
+          :loading="downloading"
+          @click="download"
+          >{{ t('log.download') }}</v-btn
+        >
+        <v-btn size="small" variant="tonal" color="error" prepend-icon="mdi-broom" @click="clear">{{
+          t('log.clear')
+        }}</v-btn>
       </div>
 
       <v-text-field
@@ -203,14 +253,29 @@ async function download() {
         class="mb-3"
       >
         <template v-if="search.trim()" #append-inner>
-          <span class="text-caption text-medium-emphasis">{{ t('log.matches', { n: matchCount }) }}</span>
+          <span class="text-caption text-medium-emphasis">{{
+            t('log.matches', { n: matchCount })
+          }}</span>
         </template>
       </v-text-field>
 
-      <v-alert v-if="errorMsg" type="error" variant="tonal" density="compact" class="mb-3" :text="errorMsg" />
+      <v-alert
+        v-if="errorMsg"
+        type="error"
+        variant="tonal"
+        density="compact"
+        class="mb-3"
+        :text="errorMsg"
+      />
 
       <div v-if="!daemon && canScrollBack" class="text-center mb-2">
-        <v-btn size="small" variant="tonal" :loading="loadingOlder" prepend-icon="mdi-arrow-up" @click="loadOlder">
+        <v-btn
+          size="small"
+          variant="tonal"
+          :loading="loadingOlder"
+          prepend-icon="mdi-arrow-up"
+          @click="loadOlder"
+        >
           {{ t('log.loadOlder') }}
         </v-btn>
       </div>
@@ -234,7 +299,7 @@ async function download() {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px 14px;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   font-size: 0.8rem;
   line-height: 1.55;
   height: calc(100vh - 230px);

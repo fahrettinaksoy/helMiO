@@ -55,10 +55,16 @@ export function setupRealtime(io) {
       const pr = prev.get(p.fullName);
       if (!pr) continue; // skip first observation to avoid a load-time flood
       if (p.statecode === 200 && pr.statecode !== 200) {
-        eventBus.emit('alert', { serverId, alert: { type: 'fatal', fullName: p.fullName, at: now } });
+        eventBus.emit('alert', {
+          serverId,
+          alert: { type: 'fatal', fullName: p.fullName, at: now },
+        });
       }
       if (p.flapping && !pr.flapping) {
-        eventBus.emit('alert', { serverId, alert: { type: 'flapping', fullName: p.fullName, at: now } });
+        eventBus.emit('alert', {
+          serverId,
+          alert: { type: 'flapping', fullName: p.fullName, at: now },
+        });
       }
     }
     prevStates.set(serverId, next);
@@ -69,7 +75,11 @@ export function setupRealtime(io) {
   async function sampleMetrics(serverId, server, snapshot) {
     if (!metricsStore.due(serverId)) return;
     let host = null;
-    try { host = await supervisorService.hostMetrics(server); } catch { /* none */ }
+    try {
+      host = await supervisorService.hostMetrics(server);
+    } catch {
+      /* none */
+    }
     metricsStore.recordFromSnapshot(serverId, snapshot, { host });
   }
 
@@ -121,8 +131,11 @@ export function setupRealtime(io) {
   eventBus.on('event', ({ serverId, event }) => {
     io.to(roomName(serverId)).emit('event', { serverId, event, at: event.at });
     // PROCESS_STATE / GROUP changes affect the process table → refresh snapshot.
-    if (event.eventname?.startsWith('PROCESS_STATE') || event.eventname?.startsWith('PROCESS_GROUP')
-        || event.eventname?.startsWith('SUPERVISOR_STATE')) {
+    if (
+      event.eventname?.startsWith('PROCESS_STATE') ||
+      event.eventname?.startsWith('PROCESS_GROUP') ||
+      event.eventname?.startsWith('SUPERVISOR_STATE')
+    ) {
       scheduleRefresh(serverId);
     }
   });
@@ -149,7 +162,9 @@ export function setupRealtime(io) {
       const snapshot = await supervisorService.snapshot(server);
       detectAlerts(serverId, snapshot);
       await sampleMetrics(serverId, server, snapshot);
-    } catch { /* unreachable server: skip this sweep */ }
+    } catch {
+      /* unreachable server: skip this sweep */
+    }
   }
 
   if (config.alertPollIntervalMs > 0) {
@@ -184,92 +199,112 @@ export function setupRealtime(io) {
 
     // --- Supervisor install (live log stream to the requesting socket) ---
     let installing = false;
-    socket.on('install:start', async ({ serverId, sudoPassword = '', configureHttp = true } = {}) => {
-      if (installing) return;
-      // Installing Supervisor mutates the target host — admin-level action.
-      if (!roleHasPermission(socket.user.role, PERMISSIONS.SERVER_MANAGE)) {
-        socket.emit('install:result', { ok: false, error: 'Bu işlem için yetkiniz yok' });
-        return;
-      }
-      const server = await serverStore.get(serverId);
-      if (!server) {
-        socket.emit('install:result', { ok: false, error: 'Sunucu bulunamadı' });
-        return;
-      }
-      installing = true;
-      auditStore.record({
-        actorId: socket.user.id, actorName: socket.user.username, role: socket.user.role,
-        action: 'supervisor.install', serverId, target: server.name,
-      });
-      const log = (line) => socket.emit('install:log', { serverId, line });
-      try {
-        const result = await installerService.install(server, { sudoPassword, configureHttp }, log);
-        socket.emit('install:result', { serverId, ...result });
-      } catch (err) {
-        socket.emit('install:log', { serverId, line: `\n✗ Hata: ${err.message}` });
-        socket.emit('install:result', { serverId, ok: false, error: err.message });
-      } finally {
-        installing = false;
-      }
-    });
+    socket.on(
+      'install:start',
+      async ({ serverId, sudoPassword = '', configureHttp = true } = {}) => {
+        if (installing) return;
+        // Installing Supervisor mutates the target host — admin-level action.
+        if (!roleHasPermission(socket.user.role, PERMISSIONS.SERVER_MANAGE)) {
+          socket.emit('install:result', { ok: false, error: 'Bu işlem için yetkiniz yok' });
+          return;
+        }
+        const server = await serverStore.get(serverId);
+        if (!server) {
+          socket.emit('install:result', { ok: false, error: 'Sunucu bulunamadı' });
+          return;
+        }
+        installing = true;
+        auditStore.record({
+          actorId: socket.user.id,
+          actorName: socket.user.username,
+          role: socket.user.role,
+          action: 'supervisor.install',
+          serverId,
+          target: server.name,
+        });
+        const log = (line) => socket.emit('install:log', { serverId, line });
+        try {
+          const result = await installerService.install(
+            server,
+            { sudoPassword, configureHttp },
+            log,
+          );
+          socket.emit('install:result', { serverId, ...result });
+        } catch (err) {
+          socket.emit('install:log', { serverId, line: `\n✗ Hata: ${err.message}` });
+          socket.emit('install:result', { serverId, ok: false, error: err.message });
+        } finally {
+          installing = false;
+        }
+      },
+    );
 
     // --- Live log tail (per socket) ---
     let logTimer = null;
     function stopLog() {
-      if (logTimer) { clearInterval(logTimer); logTimer = null; }
-    }
-    socket.on('log:start', async ({ serverId, fullName, channel = 'stdout', daemon = false } = {}) => {
-      stopLog();
-      const server = await serverStore.get(serverId);
-      if (!server || (!fullName && !daemon)) {
-        socket.emit('log:error', { error: 'Sunucu/işlem bulunamadı' });
-        return;
+      if (logTimer) {
+        clearInterval(logTimer);
+        logTimer = null;
       }
+    }
+    socket.on(
+      'log:start',
+      async ({ serverId, fullName, channel = 'stdout', daemon = false } = {}) => {
+        stopLog();
+        const server = await serverStore.get(serverId);
+        if (!server || (!fullName && !daemon)) {
+          socket.emit('log:error', { error: 'Sunucu/işlem bulunamadı' });
+          return;
+        }
 
-      // Main supervisord log: snapshot replace each tick.
-      if (daemon) {
-        const tickD = async () => {
+        // Main supervisord log: snapshot replace each tick.
+        if (daemon) {
+          const tickD = async () => {
+            try {
+              const data = await supervisorService.tailDaemonLog(server);
+              socket.emit('log:chunk', { data, append: false });
+            } catch (err) {
+              socket.emit('log:error', { error: err.message });
+            }
+          };
+          await tickD();
+          logTimer = setInterval(tickD, 2000);
+          return;
+        }
+
+        const incremental = supervisorService.supportsLogOffset(server);
+        let offset = 0;
+        let first = true;
+        const tick = async () => {
           try {
-            const data = await supervisorService.tailDaemonLog(server);
-            socket.emit('log:chunk', { data, append: false });
+            const useOffset = incremental ? offset : 0;
+            const res = await supervisorService.tailLog(server, fullName, channel, useOffset);
+            offset = res.offset;
+            if (incremental) {
+              if (first) {
+                // Byte offset where the displayed content begins — the anchor the
+                // client uses to page backwards through older log history.
+                const startOffset = Math.max(
+                  0,
+                  (res.offset || 0) - Buffer.byteLength(res.data || '', 'utf8'),
+                );
+                socket.emit('log:chunk', { data: res.data || '', append: false, startOffset });
+              } else if (res.data) {
+                socket.emit('log:chunk', { data: res.data, append: true });
+              }
+              first = false;
+            } else {
+              // No offset support (docker): send full snapshot, client replaces.
+              socket.emit('log:chunk', { data: res.data, append: false });
+            }
           } catch (err) {
             socket.emit('log:error', { error: err.message });
           }
         };
-        await tickD();
-        logTimer = setInterval(tickD, 2000);
-        return;
-      }
-
-      const incremental = supervisorService.supportsLogOffset(server);
-      let offset = 0;
-      let first = true;
-      const tick = async () => {
-        try {
-          const useOffset = incremental ? offset : 0;
-          const res = await supervisorService.tailLog(server, fullName, channel, useOffset);
-          offset = res.offset;
-          if (incremental) {
-            if (first) {
-              // Byte offset where the displayed content begins — the anchor the
-              // client uses to page backwards through older log history.
-              const startOffset = Math.max(0, (res.offset || 0) - Buffer.byteLength(res.data || '', 'utf8'));
-              socket.emit('log:chunk', { data: res.data || '', append: false, startOffset });
-            } else if (res.data) {
-              socket.emit('log:chunk', { data: res.data, append: true });
-            }
-            first = false;
-          } else {
-            // No offset support (docker): send full snapshot, client replaces.
-            socket.emit('log:chunk', { data: res.data, append: false });
-          }
-        } catch (err) {
-          socket.emit('log:error', { error: err.message });
-        }
-      };
-      await tick();
-      logTimer = setInterval(tick, 1500);
-    });
+        await tick();
+        logTimer = setInterval(tick, 1500);
+      },
+    );
     socket.on('log:stop', stopLog);
 
     socket.on('disconnecting', stopLog);

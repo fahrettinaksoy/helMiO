@@ -36,7 +36,7 @@ const xRange = computed(() => {
 
 const yRange = computed(() => {
   const vs = allPoints.value.map((p) => p.v).filter((v) => v != null);
-  const max = props.yMax != null ? props.yMax : (vs.length ? Math.max(...vs) : 1);
+  const max = props.yMax != null ? props.yMax : vs.length ? Math.max(...vs) : 1;
   return [0, max <= 0 ? 1 : max * 1.1];
 });
 
@@ -54,7 +54,10 @@ function linePath(points) {
   let d = '';
   let pen = false;
   for (const p of points) {
-    if (p.v == null) { pen = false; continue; }
+    if (p.v == null) {
+      pen = false;
+      continue;
+    }
     d += `${pen ? 'L' : 'M'}${sx(p.at).toFixed(1)},${sy(p.v).toFixed(1)} `;
     pen = true;
   }
@@ -63,7 +66,9 @@ function linePath(points) {
 function areaPath(points) {
   const valid = points.filter((p) => p.v != null);
   if (valid.length < 2) return '';
-  const top = valid.map((p, i) => `${i ? 'L' : 'M'}${sx(p.at).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
+  const top = valid
+    .map((p, i) => `${i ? 'L' : 'M'}${sx(p.at).toFixed(1)},${sy(p.v).toFixed(1)}`)
+    .join(' ');
   const base = H.value - PAD.b;
   return `${top} L${sx(valid[valid.length - 1].at).toFixed(1)},${base} L${sx(valid[0].at).toFixed(1)},${base} Z`;
 }
@@ -83,7 +88,7 @@ const latest = computed(() =>
   props.series.map((s) => {
     const pts = (s.points || []).filter((p) => p.v != null);
     return { name: s.name, color: s.color, value: pts.length ? pts[pts.length - 1].v : null };
-  })
+  }),
 );
 
 // Simple hover readout
@@ -131,8 +136,22 @@ function onMove(e) {
       </g>
 
       <template v-if="hasData">
-        <path v-for="s in series" :key="`a-${s.name}`" :d="areaPath(s.points)" :fill="s.color" fill-opacity="0.12" />
-        <path v-for="s in series" :key="`l-${s.name}`" :d="linePath(s.points)" :stroke="s.color" fill="none" stroke-width="2" vector-effect="non-scaling-stroke" />
+        <path
+          v-for="s in series"
+          :key="`a-${s.name}`"
+          :d="areaPath(s.points)"
+          :fill="s.color"
+          fill-opacity="0.12"
+        />
+        <path
+          v-for="s in series"
+          :key="`l-${s.name}`"
+          :d="linePath(s.points)"
+          :stroke="s.color"
+          fill="none"
+          stroke-width="2"
+          vector-effect="non-scaling-stroke"
+        />
       </template>
       <text v-else :x="W / 2" :y="H / 2" text-anchor="middle" class="axis">—</text>
 
@@ -141,7 +160,9 @@ function onMove(e) {
     </svg>
 
     <div v-if="hover && hasData" class="hover-readout text-caption">
-      <span class="text-medium-emphasis">{{ new Date(hover.readout.find(r => r.at)?.at || hover.at).toLocaleTimeString() }}</span>
+      <span class="text-medium-emphasis">{{
+        new Date(hover.readout.find((r) => r.at)?.at || hover.at).toLocaleTimeString()
+      }}</span>
       <span v-for="r in hover.readout" :key="r.name" class="ms-2">
         <span class="legend-dot" :style="{ background: r.color }" />{{ fmt(r.v) }}
       </span>
@@ -150,10 +171,35 @@ function onMove(e) {
 </template>
 
 <style scoped>
-.chart { width: 100%; display: block; }
-.grid { stroke: rgba(var(--v-theme-on-surface), 0.08); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.axis { fill: rgba(var(--v-theme-on-surface), 0.5); font-size: 9px; font-family: ui-monospace, monospace; }
-.cursor { stroke: rgba(var(--v-theme-on-surface), 0.3); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 3 3; }
-.legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
-.hover-readout { padding: 2px 4px; }
+.chart {
+  width: 100%;
+  display: block;
+}
+.grid {
+  stroke: rgba(var(--v-theme-on-surface), 0.08);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.axis {
+  fill: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+}
+.cursor {
+  stroke: rgba(var(--v-theme-on-surface), 0.3);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 3 3;
+}
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.hover-readout {
+  padding: 2px 4px;
+}
 </style>

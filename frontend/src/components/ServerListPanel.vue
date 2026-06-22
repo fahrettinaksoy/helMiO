@@ -24,8 +24,12 @@ function toggle() {
 let subscribed = [];
 function sync() {
   const ids = serversStore.servers.map((s) => s.id);
-  subscribed.forEach((id) => { if (!ids.includes(id)) realtime.unsubscribe(id); });
-  ids.forEach((id) => { if (!subscribed.includes(id)) realtime.subscribe(id); });
+  subscribed.forEach((id) => {
+    if (!ids.includes(id)) realtime.unsubscribe(id);
+  });
+  ids.forEach((id) => {
+    if (!subscribed.includes(id)) realtime.subscribe(id);
+  });
   subscribed = ids;
 }
 
@@ -64,21 +68,36 @@ function summary(id) {
       <v-spacer />
       <v-tooltip :text="t('serverList.collapse')" location="bottom">
         <template #activator="{ props: tip }">
-          <v-btn v-bind="tip" icon="mdi-chevron-left" size="x-small" variant="text" @click="toggle" />
+          <v-btn
+            v-bind="tip"
+            icon="mdi-chevron-left"
+            size="x-small"
+            variant="text"
+            @click="toggle"
+          />
         </template>
       </v-tooltip>
     </div>
     <div v-else class="d-flex justify-center py-3">
       <v-tooltip :text="t('serverList.expand')" location="end">
         <template #activator="{ props: tip }">
-          <v-btn v-bind="tip" icon="mdi-chevron-right" size="small" variant="text" @click="toggle" />
+          <v-btn
+            v-bind="tip"
+            icon="mdi-chevron-right"
+            size="small"
+            variant="text"
+            @click="toggle"
+          />
         </template>
       </v-tooltip>
     </div>
     <v-divider class="mx-3" />
 
     <!-- Empty -->
-    <div v-if="!serversStore.servers.length && !collapsed" class="pa-4 text-center text-medium-emphasis">
+    <div
+      v-if="!serversStore.servers.length && !collapsed"
+      class="pa-4 text-center text-medium-emphasis"
+    >
       <v-icon icon="mdi-server-off" size="32" class="mb-2" />
       <div class="text-body-2">{{ t('serverList.noServers') }}</div>
     </div>
@@ -96,14 +115,23 @@ function summary(id) {
             color="primary"
             size="small"
           >
-            <v-badge :model-value="!!(summary(s.id) && summary(s.id).fatal)" color="error" icon="mdi-alert-circle" offset-x="2" offset-y="2">
+            <v-badge
+              :model-value="!!(summary(s.id) && summary(s.id).fatal)"
+              color="error"
+              icon="mdi-alert-circle"
+              offset-x="2"
+              offset-y="2"
+            >
               <v-icon icon="mdi-circle" size="12" :color="statusColor(s.id)" />
             </v-badge>
           </v-btn>
         </template>
         <div class="text-body-2 font-weight-medium">{{ s.name }}</div>
         <div class="text-caption">
-          {{ methodLabel(s.method) }}<template v-if="summary(s.id)"> · {{ summary(s.id).running }}/{{ summary(s.id).total }}</template>
+          {{ methodLabel(s.method)
+          }}<template v-if="summary(s.id)">
+            · {{ summary(s.id).running }}/{{ summary(s.id).total }}</template
+          >
         </div>
       </v-tooltip>
     </div>
@@ -124,22 +152,42 @@ function summary(id) {
         </template>
 
         <v-list-item-title class="text-body-2 font-weight-medium">{{ s.name }}</v-list-item-title>
-        <v-list-item-subtitle class="text-caption">{{ methodLabel(s.method) }}</v-list-item-subtitle>
+        <v-list-item-subtitle class="text-caption">{{
+          methodLabel(s.method)
+        }}</v-list-item-subtitle>
 
         <template #append>
           <div v-if="summary(s.id)" class="text-caption text-medium-emphasis text-no-wrap">
-            <span class="text-success font-weight-bold">{{ summary(s.id).running }}</span>/{{ summary(s.id).total }}
-            <v-icon v-if="summary(s.id).fatal" icon="mdi-alert-circle" color="error" size="13" class="ms-1" />
+            <span class="text-success font-weight-bold">{{ summary(s.id).running }}</span
+            >/{{ summary(s.id).total }}
+            <v-icon
+              v-if="summary(s.id).fatal"
+              icon="mdi-alert-circle"
+              color="error"
+              size="13"
+              class="ms-1"
+            />
           </div>
-          <v-icon v-else-if="realtime.errors[s.id]" icon="mdi-alert-circle-outline" color="error" size="16" />
-          <v-progress-circular v-else indeterminate size="13" width="2" class="text-medium-emphasis" />
+          <v-icon
+            v-else-if="realtime.errors[s.id]"
+            icon="mdi-alert-circle-outline"
+            color="error"
+            size="16"
+          />
+          <v-progress-circular
+            v-else
+            indeterminate
+            size="13"
+            width="2"
+            class="text-medium-emphasis"
+          />
         </template>
       </v-list-item>
     </v-list>
 
     <!-- Footer: add server -->
     <template #append>
-    <v-divider class="mx-3" />
+      <v-divider class="mx-3" />
       <div class="pa-2">
         <v-btn
           v-if="!collapsed"
@@ -154,7 +202,13 @@ function summary(id) {
         <div v-else class="d-flex justify-center">
           <v-tooltip :text="t('serverList.addTooltip')" location="end">
             <template #activator="{ props: tip }">
-              <v-btn v-bind="tip" icon="mdi-plus" variant="tonal" color="primary" @click="ui.openAddServer()" />
+              <v-btn
+                v-bind="tip"
+                icon="mdi-plus"
+                variant="tonal"
+                color="primary"
+                @click="ui.openAddServer()"
+              />
             </template>
           </v-tooltip>
         </div>

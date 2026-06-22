@@ -21,7 +21,11 @@ const error = ref('');
 const isSetup = computed(() => auth.needsSetup);
 
 onMounted(async () => {
-  try { await auth.checkStatus(); } catch { /* backend unreachable; show login */ }
+  try {
+    await auth.checkStatus();
+  } catch {
+    /* backend unreachable; show login */
+  }
 });
 
 async function submit() {
@@ -33,7 +37,11 @@ async function submit() {
   loading.value = true;
   try {
     if (isSetup.value) {
-      await auth.setup({ username: username.value, password: password.value, displayName: displayName.value });
+      await auth.setup({
+        username: username.value,
+        password: password.value,
+        displayName: displayName.value,
+      });
     } else {
       await auth.login(username.value, password.value);
     }
@@ -58,12 +66,28 @@ async function submit() {
           <v-icon icon="mdi-shield-account" size="34" />
         </v-avatar>
         <v-card-title class="text-h5 font-weight-bold">HelMiO</v-card-title>
-        <v-card-subtitle>{{ isSetup ? t('auth.setupSubtitle') : t('auth.loginSubtitle') }}</v-card-subtitle>
+        <v-card-subtitle>{{
+          isSetup ? t('auth.setupSubtitle') : t('auth.loginSubtitle')
+        }}</v-card-subtitle>
       </v-card-item>
 
       <v-card-text>
-        <v-alert v-if="isSetup" type="info" variant="tonal" density="compact" class="mb-4" :text="t('auth.setupHint')" />
-        <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-4" :text="error" />
+        <v-alert
+          v-if="isSetup"
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+          :text="t('auth.setupHint')"
+        />
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+          :text="error"
+        />
 
         <v-form @submit.prevent="submit">
           <v-text-field
@@ -108,14 +132,7 @@ async function submit() {
             autocomplete="new-password"
             class="mb-2"
           />
-          <v-btn
-            type="submit"
-            color="primary"
-            size="large"
-            block
-            :loading="loading"
-            class="mt-2"
-          >
+          <v-btn type="submit" color="primary" size="large" block :loading="loading" class="mt-2">
             {{ isSetup ? t('auth.createAdmin') : t('auth.signIn') }}
           </v-btn>
         </v-form>

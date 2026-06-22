@@ -23,13 +23,16 @@ const formError = ref('');
 const confirmDelete = ref(null);
 
 const ROLES = ['admin', 'operator', 'viewer'];
-const roleColor = (r) => ({ admin: 'error', operator: 'warning', viewer: 'info' }[r] || 'default');
+const roleColor = (r) => ({ admin: 'error', operator: 'warning', viewer: 'info' })[r] || 'default';
 
 // ---- filters ----
 const search = ref('');
 const roleFilter = ref(null);
 const statusFilter = ref(null);
-const roleOptions = computed(() => [{ value: null, title: t('common.allRoles') }, ...ROLES.map((r) => ({ value: r, title: t(`roles.${r}`) }))]);
+const roleOptions = computed(() => [
+  { value: null, title: t('common.allRoles') },
+  ...ROLES.map((r) => ({ value: r, title: t(`roles.${r}`) })),
+]);
 const statusOptions = computed(() => [
   { value: null, title: t('common.allStatuses') },
   { value: 'active', title: t('common.active') },
@@ -79,7 +82,13 @@ function openCreate() {
 }
 function openEdit(u) {
   editing.value = u;
-  form.value = { username: u.username, displayName: u.displayName, role: u.role, password: '', disabled: !!u.disabled };
+  form.value = {
+    username: u.username,
+    displayName: u.displayName,
+    role: u.role,
+    password: '',
+    disabled: !!u.disabled,
+  };
   formError.value = '';
   dialog.value = true;
 }
@@ -89,7 +98,11 @@ async function save() {
   formError.value = '';
   try {
     if (editing.value) {
-      const patch = { displayName: form.value.displayName, role: form.value.role, disabled: form.value.disabled };
+      const patch = {
+        displayName: form.value.displayName,
+        role: form.value.role,
+        disabled: form.value.disabled,
+      };
       if (form.value.password) patch.password = form.value.password;
       await usersApi.update(editing.value.id, patch);
       notify(t('users.updated', { name: form.value.username }));
@@ -129,7 +142,9 @@ const isSelf = (u) => u.id === auth.user?.id;
 <template>
   <PageShell :title="t('users.title')" :subtitle="t('users.subtitle')" icon="mdi-account-group">
     <template #hero-actions>
-      <v-btn color="white" variant="tonal" prepend-icon="mdi-account-plus" @click="openCreate">{{ t('users.addUser') }}</v-btn>
+      <v-btn color="white" variant="tonal" prepend-icon="mdi-account-plus" @click="openCreate">{{
+        t('users.addUser')
+      }}</v-btn>
     </template>
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
@@ -140,74 +155,119 @@ const isSelf = (u) => u.id === auth.user?.id;
           v-model="search"
           :placeholder="t('common.search')"
           prepend-inner-icon="mdi-magnify"
-          variant="solo-filled" density="compact" flat hide-details clearable rounded="lg"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          clearable
+          rounded="lg"
           class="flt-search"
         />
         <v-select
-          v-model="roleFilter" :items="roleOptions"
-          variant="solo-filled" density="compact" flat hide-details rounded="lg"
+          v-model="roleFilter"
+          :items="roleOptions"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          rounded="lg"
           class="flt-select"
         />
         <v-select
-          v-model="statusFilter" :items="statusOptions"
-          variant="solo-filled" density="compact" flat hide-details rounded="lg"
+          v-model="statusFilter"
+          :items="statusOptions"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          rounded="lg"
           class="flt-select"
         />
       </template>
       <template #default="{ height }">
-      <v-data-table
-        :headers="headers"
-        :items="filteredUsers"
-        :loading="loading"
-        item-value="id"
-        density="comfortable"
-        hover
-        fixed-header
-        :height="height"
-        hide-default-footer
-        :items-per-page="-1"
-        class="bg-transparent"
-      >
-        <template #[`item.username`]="{ item }">
-          <div class="d-flex align-center ga-2">
-            <v-avatar :color="roleColor(item.role)" variant="tonal" size="32">
-              <span class="text-caption font-weight-bold">{{ (item.displayName || item.username).slice(0, 2).toUpperCase() }}</span>
-            </v-avatar>
-            <div>
-              <div class="font-weight-medium">{{ item.displayName || item.username }}
-                <v-chip v-if="isSelf(item)" size="x-small" variant="tonal" color="primary" label class="ms-1">{{ t('users.you') }}</v-chip>
+        <v-data-table
+          :headers="headers"
+          :items="filteredUsers"
+          :loading="loading"
+          item-value="id"
+          density="comfortable"
+          hover
+          fixed-header
+          :height="height"
+          hide-default-footer
+          :items-per-page="-1"
+          class="bg-transparent"
+        >
+          <template #[`item.username`]="{ item }">
+            <div class="d-flex align-center ga-2">
+              <v-avatar :color="roleColor(item.role)" variant="tonal" size="32">
+                <span class="text-caption font-weight-bold">{{
+                  (item.displayName || item.username).slice(0, 2).toUpperCase()
+                }}</span>
+              </v-avatar>
+              <div>
+                <div class="font-weight-medium">
+                  {{ item.displayName || item.username }}
+                  <v-chip
+                    v-if="isSelf(item)"
+                    size="x-small"
+                    variant="tonal"
+                    color="primary"
+                    label
+                    class="ms-1"
+                    >{{ t('users.you') }}</v-chip
+                  >
+                </div>
+                <div class="text-caption text-medium-emphasis">@{{ item.username }}</div>
               </div>
-              <div class="text-caption text-medium-emphasis">@{{ item.username }}</div>
             </div>
-          </div>
-        </template>
-        <template #[`item.role`]="{ item }">
-          <v-chip :color="roleColor(item.role)" size="small" variant="tonal" label>{{ t(`roles.${item.role}`) }}</v-chip>
-        </template>
-        <template #[`item.disabled`]="{ item }">
-          <v-chip :color="item.disabled ? 'error' : 'success'" size="small" variant="tonal" label>
-            {{ item.disabled ? t('users.disabled') : t('users.active') }}
-          </v-chip>
-        </template>
-        <template #[`item.lastLoginAt`]="{ item }">
-          <span class="text-medium-emphasis text-caption">{{ item.lastLoginAt ? new Date(item.lastLoginAt).toLocaleString() : '—' }}</span>
-        </template>
-        <template #[`item.actions`]="{ item }">
-          <div class="d-flex justify-end ga-1">
-            <v-tooltip :text="t('common.edit')" location="top">
-              <template #activator="{ props: tip }"><v-btn v-bind="tip" size="small" icon="mdi-pencil" variant="text" @click="openEdit(item)" /></template>
-            </v-tooltip>
-            <v-tooltip :text="t('common.delete')" location="top">
-              <template #activator="{ props: tip }">
-                <v-btn v-bind="tip" size="small" icon="mdi-delete" variant="text" color="error" :disabled="isSelf(item)" @click="confirmDelete = item" />
-              </template>
-            </v-tooltip>
-          </div>
-        </template>
-        <template #no-data>
-          <div class="py-8 text-center text-medium-emphasis">{{ t('common.noMatch') }}</div>
-        </template>
-      </v-data-table>
+          </template>
+          <template #[`item.role`]="{ item }">
+            <v-chip :color="roleColor(item.role)" size="small" variant="tonal" label>{{
+              t(`roles.${item.role}`)
+            }}</v-chip>
+          </template>
+          <template #[`item.disabled`]="{ item }">
+            <v-chip :color="item.disabled ? 'error' : 'success'" size="small" variant="tonal" label>
+              {{ item.disabled ? t('users.disabled') : t('users.active') }}
+            </v-chip>
+          </template>
+          <template #[`item.lastLoginAt`]="{ item }">
+            <span class="text-medium-emphasis text-caption">{{
+              item.lastLoginAt ? new Date(item.lastLoginAt).toLocaleString() : '—'
+            }}</span>
+          </template>
+          <template #[`item.actions`]="{ item }">
+            <div class="d-flex justify-end ga-1">
+              <v-tooltip :text="t('common.edit')" location="top">
+                <template #activator="{ props: tip }"
+                  ><v-btn
+                    v-bind="tip"
+                    size="small"
+                    icon="mdi-pencil"
+                    variant="text"
+                    @click="openEdit(item)"
+                /></template>
+              </v-tooltip>
+              <v-tooltip :text="t('common.delete')" location="top">
+                <template #activator="{ props: tip }">
+                  <v-btn
+                    v-bind="tip"
+                    size="small"
+                    icon="mdi-delete"
+                    variant="text"
+                    color="error"
+                    :disabled="isSelf(item)"
+                    @click="confirmDelete = item"
+                  />
+                </template>
+              </v-tooltip>
+            </div>
+          </template>
+          <template #no-data>
+            <div class="py-8 text-center text-medium-emphasis">{{ t('common.noMatch') }}</div>
+          </template>
+        </v-data-table>
       </template>
     </DataPanel>
 
@@ -219,7 +279,14 @@ const isSelf = (u) => u.id === auth.user?.id;
       :width="480"
     >
       <div class="pa-4">
-        <v-alert v-if="formError" type="error" variant="tonal" density="compact" class="mb-3" :text="formError" />
+        <v-alert
+          v-if="formError"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="mb-3"
+          :text="formError"
+        />
         <v-text-field
           v-model="form.username"
           :label="t('auth.username')"
@@ -228,11 +295,28 @@ const isSelf = (u) => u.id === auth.user?.id;
           :disabled="!!editing"
           class="mb-2"
         />
-        <v-text-field v-model="form.displayName" :label="t('auth.displayName')" variant="outlined" density="comfortable" class="mb-2" />
-        <v-select v-model="form.role" :items="ROLES" :label="t('users.colRole')" variant="outlined" density="comfortable" class="mb-2">
+        <v-text-field
+          v-model="form.displayName"
+          :label="t('auth.displayName')"
+          variant="outlined"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-select
+          v-model="form.role"
+          :items="ROLES"
+          :label="t('users.colRole')"
+          variant="outlined"
+          density="comfortable"
+          class="mb-2"
+        >
           <template #selection="{ item }">{{ t(`roles.${item.value}`) }}</template>
           <template #item="{ item, props: p }">
-            <v-list-item v-bind="p" :title="t(`roles.${item.value}`)" :subtitle="t(`roles.${item.value}_desc`)" />
+            <v-list-item
+              v-bind="p"
+              :title="t(`roles.${item.value}`)"
+              :subtitle="t(`roles.${item.value}_desc`)"
+            />
           </template>
         </v-select>
         <v-text-field
@@ -244,16 +328,30 @@ const isSelf = (u) => u.id === auth.user?.id;
           autocomplete="new-password"
           class="mb-2"
         />
-        <v-switch v-if="editing" v-model="form.disabled" :label="t('users.disableAccount')" color="error" density="compact" hide-details inset />
+        <v-switch
+          v-if="editing"
+          v-model="form.disabled"
+          :label="t('users.disableAccount')"
+          color="error"
+          density="compact"
+          hide-details
+          inset
+        />
       </div>
       <template #footer="{ close }">
         <v-spacer />
         <v-btn variant="text" @click="close">{{ t('common.cancel') }}</v-btn>
-        <v-btn color="primary" variant="flat" :loading="saving" @click="save">{{ t('common.save') }}</v-btn>
+        <v-btn color="primary" variant="flat" :loading="saving" @click="save">{{
+          t('common.save')
+        }}</v-btn>
       </template>
     </SidePanel>
 
-    <v-dialog :model-value="!!confirmDelete" max-width="420" @update:model-value="confirmDelete = null">
+    <v-dialog
+      :model-value="!!confirmDelete"
+      max-width="420"
+      @update:model-value="confirmDelete = null"
+    >
       <v-card rounded="lg">
         <v-card-title>{{ t('users.deleteTitle') }}</v-card-title>
         <v-card-text>{{ t('users.deleteConfirm', { name: confirmDelete?.username }) }}</v-card-text>
@@ -265,11 +363,22 @@ const isSelf = (u) => u.id === auth.user?.id;
       </v-card>
     </v-dialog>
 
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" :timeout="4000">{{ snackbar.text }}</v-snackbar>
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      location="bottom right"
+      :timeout="4000"
+      >{{ snackbar.text }}</v-snackbar
+    >
   </PageShell>
 </template>
 
 <style scoped>
-.flt-search { width: 260px; max-width: 42vw; }
-.flt-select { width: 168px; }
+.flt-search {
+  width: 260px;
+  max-width: 42vw;
+}
+.flt-select {
+  width: 168px;
+}
 </style>

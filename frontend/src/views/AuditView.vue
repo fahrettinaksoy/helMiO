@@ -84,9 +84,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageShell :title="t('audit.title')" :subtitle="t('audit.subtitle')" icon="mdi-clipboard-text-clock">
+  <PageShell
+    :title="t('audit.title')"
+    :subtitle="t('audit.subtitle')"
+    icon="mdi-clipboard-text-clock"
+  >
     <template #hero-actions>
-      <v-btn color="white" variant="tonal" prepend-icon="mdi-refresh" @click="load">{{ t('audit.refresh') }}</v-btn>
+      <v-btn color="white" variant="tonal" prepend-icon="mdi-refresh" @click="load">{{
+        t('audit.refresh')
+      }}</v-btn>
     </template>
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
@@ -161,20 +167,36 @@ onMounted(() => {
           </template>
           <template #[`item.actorName`]="{ item }">
             <span class="font-weight-medium">{{ item.actorName }}</span>
-            <span v-if="item.role" class="text-caption text-medium-emphasis"> · {{ t(`roles.${item.role}`) }}</span>
+            <span v-if="item.role" class="text-caption text-medium-emphasis">
+              · {{ t(`roles.${item.role}`) }}</span
+            >
           </template>
           <template #[`item.action`]="{ item }">
-            <v-chip :color="actionColor(item.action)" size="x-small" variant="tonal" label>{{ item.action }}</v-chip>
+            <v-chip :color="actionColor(item.action)" size="x-small" variant="tonal" label>{{
+              item.action
+            }}</v-chip>
           </template>
           <template #[`item.target`]="{ item }">
-            <span class="text-truncate d-inline-block" style="max-width: 280px">{{ item.target || '—' }}</span>
-            <div v-if="item.detail" class="text-caption text-medium-emphasis text-truncate" style="max-width: 280px">{{ item.detail }}</div>
+            <span class="text-truncate d-inline-block" style="max-width: 280px">{{
+              item.target || '—'
+            }}</span>
+            <div
+              v-if="item.detail"
+              class="text-caption text-medium-emphasis text-truncate"
+              style="max-width: 280px"
+            >
+              {{ item.detail }}
+            </div>
           </template>
           <template #[`item.serverId`]="{ item }">
             <span class="text-caption">{{ serverName(item.serverId) }}</span>
           </template>
           <template #[`item.status`]="{ item }">
-            <v-icon :icon="item.status === 'ok' ? 'mdi-check-circle' : 'mdi-alert-circle'" :color="item.status === 'ok' ? 'success' : 'error'" size="18" />
+            <v-icon
+              :icon="item.status === 'ok' ? 'mdi-check-circle' : 'mdi-alert-circle'"
+              :color="item.status === 'ok' ? 'success' : 'error'"
+              size="18"
+            />
           </template>
           <template #[`item.ip`]="{ item }">
             <span class="text-caption text-medium-emphasis">{{ item.ip || '—' }}</span>
@@ -196,8 +218,18 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.audit-actor { width: 200px; max-width: 40vw; }
-.audit-filter { width: 220px; max-width: 40vw; }
-.audit-status { width: 160px; }
-.mono-table :deep(td) { font-size: 0.82rem; }
+.audit-actor {
+  width: 200px;
+  max-width: 40vw;
+}
+.audit-filter {
+  width: 220px;
+  max-width: 40vw;
+}
+.audit-status {
+  width: 160px;
+}
+.mono-table :deep(td) {
+  font-size: 0.82rem;
+}
 </style>

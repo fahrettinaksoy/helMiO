@@ -19,7 +19,7 @@ export class BaseConnector {
    * @param {any[]} _params
    * @returns {Promise<any>}
    */
-  // eslint-disable-next-line no-unused-vars
+
   async call(_method, _params = []) {
     throw new Error('call() not implemented by connector');
   }
@@ -54,18 +54,26 @@ export class BaseConnector {
             // The xmlrpc client unwraps the multicall envelope: a successful call
             // yields its value directly, while a fault arrives as a
             // { faultCode, faultString } struct.
-            if (item && typeof item === 'object' && !Array.isArray(item)
-                && (item.faultString !== undefined || item.faultCode !== undefined)) {
+            if (
+              item &&
+              typeof item === 'object' &&
+              !Array.isArray(item) &&
+              (item.faultString !== undefined || item.faultCode !== undefined)
+            ) {
               return { error: item.faultString || `fault ${item.faultCode}` };
             }
             return { value: item };
           });
         }
-      } catch { /* fall through to sequential */ }
+      } catch {
+        /* fall through to sequential */
+      }
     }
     const settled = await Promise.allSettled(list.map((c) => this.call(c.methodName, c.params)));
     return settled.map((r) =>
-      r.status === 'fulfilled' ? { value: r.value } : { error: r.reason?.message || String(r.reason) }
+      r.status === 'fulfilled'
+        ? { value: r.value }
+        : { error: r.reason?.message || String(r.reason) },
     );
   }
 
@@ -77,7 +85,11 @@ export class BaseConnector {
       { methodName: 'supervisor.getIdentification' },
     ]);
     if (state.error) throw new Error(state.error);
-    return { version: version.value ?? null, state: state.value, identification: identification.value ?? null };
+    return {
+      version: version.value ?? null,
+      state: state.value,
+      identification: identification.value ?? null,
+    };
   }
 
   /** Whether this connector can run arbitrary shell commands (for diagnose/install). */
@@ -92,7 +104,7 @@ export class BaseConnector {
    * @param {{ input?: string, onData?: (chunk: string, stream: 'stdout'|'stderr') => void }} [_opts]
    * @returns {Promise<{ stdout: string, stderr: string, code: number }>}
    */
-  // eslint-disable-next-line no-unused-vars
+
   async exec(_command, _opts = {}) {
     throw new Error('Bu bağlantı türü shell komutu çalıştırmayı desteklemiyor.');
   }

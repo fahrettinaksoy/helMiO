@@ -30,8 +30,14 @@ export async function authenticate(req, res, next) {
   const payload = verifyToken(token);
   if (payload) {
     const user = await userStore.getById(payload.sub);
-    if (!user || user.disabled) return res.status(401).json({ error: 'Hesap bulunamadı veya devre dışı' });
-    req.user = { id: user.id, username: user.username, role: user.role, displayName: user.displayName };
+    if (!user || user.disabled)
+      return res.status(401).json({ error: 'Hesap bulunamadı veya devre dışı' });
+    req.user = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      displayName: user.displayName,
+    };
     return next();
   }
 
@@ -40,7 +46,12 @@ export async function authenticate(req, res, next) {
     const apiTok = await apiTokenStore.verify(token);
     if (apiTok) {
       apiTokenStore.touch(apiTok.id).catch(() => {});
-      req.user = { id: `api:${apiTok.id}`, username: `token:${apiTok.name}`, role: apiTok.role, isApiToken: true };
+      req.user = {
+        id: `api:${apiTok.id}`,
+        username: `token:${apiTok.name}`,
+        role: apiTok.role,
+        isApiToken: true,
+      };
       return next();
     }
   }
@@ -79,7 +90,10 @@ export function clientIp(req) {
  * Record an audit event from a request context. `target` and `detail` are
  * action-specific. Status defaults to 'ok'.
  */
-export function audit(req, { action, serverId = null, target = null, status = 'ok', detail = null }) {
+export function audit(
+  req,
+  { action, serverId = null, target = null, status = 'ok', detail = null },
+) {
   auditStore.record({
     actorId: req.user?.id || null,
     actorName: req.user?.username || 'anonymous',

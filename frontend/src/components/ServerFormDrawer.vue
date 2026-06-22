@@ -58,10 +58,39 @@ const isEdit = computed(() => !!props.server);
 // Method-specific payload (without the name) — shared by test + save + signature.
 function currentPayload() {
   const payloads = {
-    tcp: { host: form.host, port: form.port, secure: form.secure, username: form.username, password: form.password, path: form.path },
-    local: { socketPath: form.socketPath, username: form.username, password: form.password, path: form.path },
-    ssh: { sshHost: form.sshHost, sshPort: form.sshPort, sshUser: form.sshUser, sshPassword: form.sshPassword, privateKey: form.privateKey, target: form.target, socketPath: form.socketPath, targetHost: form.targetHost, targetPort: form.targetPort },
-    docker: { container: form.container, connection: form.connection, dockerSocket: form.dockerSocket, dockerHost: form.dockerHost, dockerPort: form.dockerPort, confPath: form.confPath },
+    tcp: {
+      host: form.host,
+      port: form.port,
+      secure: form.secure,
+      username: form.username,
+      password: form.password,
+      path: form.path,
+    },
+    local: {
+      socketPath: form.socketPath,
+      username: form.username,
+      password: form.password,
+      path: form.path,
+    },
+    ssh: {
+      sshHost: form.sshHost,
+      sshPort: form.sshPort,
+      sshUser: form.sshUser,
+      sshPassword: form.sshPassword,
+      privateKey: form.privateKey,
+      target: form.target,
+      socketPath: form.socketPath,
+      targetHost: form.targetHost,
+      targetPort: form.targetPort,
+    },
+    docker: {
+      container: form.container,
+      connection: form.connection,
+      dockerSocket: form.dockerSocket,
+      dockerHost: form.dockerHost,
+      dockerPort: form.dockerPort,
+      confPath: form.confPath,
+    },
     agent: { agentUrl: form.agentUrl, agentToken: form.agentToken },
   };
   return payloads[form.method];
@@ -83,7 +112,7 @@ watch(
     baselineSig = connSignature.value;
     // Editing an existing server is assumed already-valid until connection fields change.
     testState.value = isEdit.value ? 'ok' : 'idle';
-  }
+  },
 );
 
 // Reset the test whenever connection fields diverge from what was last loaded/tested.
@@ -98,12 +127,14 @@ const methods = computed(() => store.methods);
 const selectedMethod = computed(() => methods.value.find((m) => m.id === form.method));
 
 // Example program block for installing the agent under supervisord on the target.
-const agentProgramSnippet = computed(() => `[program:helmio-agent]
+const agentProgramSnippet = computed(
+  () => `[program:helmio-agent]
 command=node /opt/helmio/agent/src/index.js
 directory=/opt/helmio/agent
 autostart=true
 autorestart=true
-environment=AGENT_PORT="8787",AGENT_TOKEN="${form.agentToken || '<token>'}",SUPERVISOR_SOCKET="/var/run/supervisor.sock"`);
+environment=AGENT_PORT="8787",AGENT_TOKEN="${form.agentToken || '<token>'}",SUPERVISOR_SOCKET="/var/run/supervisor.sock"`,
+);
 
 const tokenGenCmd = 'openssl rand -hex 24';
 
@@ -115,7 +146,9 @@ async function copy(text, key) {
   try {
     await navigator.clipboard.writeText(text);
     copied.value = key;
-    setTimeout(() => { if (copied.value === key) copied.value = null; }, 1500);
+    setTimeout(() => {
+      if (copied.value === key) copied.value = null;
+    }, 1500);
   } catch {
     /* clipboard unavailable */
   }
@@ -144,7 +177,9 @@ async function test() {
       baselineSig = connSignature.value;
       const sup = res.supervisor;
       if (sup?.reachable) {
-        testMsg.value = t('form.testOkSupervisor', { version: sup.version || t('form.supervisorRunning') });
+        testMsg.value = t('form.testOkSupervisor', {
+          version: sup.version || t('form.supervisorRunning'),
+        });
       } else if (res.channel === 'shell') {
         testMsg.value = t('form.testOkShell');
       } else if (res.channel === 'agent') {
@@ -180,7 +215,11 @@ async function save() {
     error.value = e.response?.data?.error || e.message;
     const details = e.response?.data?.details?.fieldErrors;
     if (details) {
-      error.value += ': ' + Object.entries(details).map(([k, v]) => `${k} (${v.join(', ')})`).join('; ');
+      error.value +=
+        ': ' +
+        Object.entries(details)
+          .map(([k, v]) => `${k} (${v.join(', ')})`)
+          .join('; ');
     }
   } finally {
     saving.value = false;
@@ -228,8 +267,12 @@ async function save() {
             <v-list-item v-bind="itemProps" :disabled="item.raw.available === false">
               <template #subtitle>{{ item.raw.description }}</template>
               <template #append>
-                <v-chip v-if="item.raw.recommended" size="x-small" color="success" variant="flat">{{ t('form.recommended') }}</v-chip>
-                <v-chip v-else-if="item.raw.available === false" size="x-small" variant="tonal">{{ t('form.comingSoon') }}</v-chip>
+                <v-chip v-if="item.raw.recommended" size="x-small" color="success" variant="flat">{{
+                  t('form.recommended')
+                }}</v-chip>
+                <v-chip v-else-if="item.raw.available === false" size="x-small" variant="tonal">{{
+                  t('form.comingSoon')
+                }}</v-chip>
               </template>
             </v-list-item>
           </template>
@@ -247,15 +290,52 @@ async function save() {
         <!-- TCP fields -->
         <template v-if="form.method === 'tcp'">
           <div class="d-flex ga-3">
-            <v-text-field v-model="form.host" :label="t('form.hostIp')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
-            <v-text-field v-model.number="form.port" :label="t('form.port')" type="number" variant="outlined" density="comfortable" autocomplete="off" style="max-width: 130px" />
+            <v-text-field
+              v-model="form.host"
+              :label="t('form.hostIp')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
+            <v-text-field
+              v-model.number="form.port"
+              :label="t('form.port')"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              style="max-width: 130px"
+            />
           </div>
           <div class="d-flex ga-3">
-            <v-text-field v-model="form.username" :label="t('form.username')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
-            <v-text-field v-model="form.password" :label="t('form.password')" type="password" variant="outlined" density="comfortable" autocomplete="new-password" class="flex-grow-1" />
+            <v-text-field
+              v-model="form.username"
+              :label="t('form.username')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
+            <v-text-field
+              v-model="form.password"
+              :label="t('form.password')"
+              type="password"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="new-password"
+              class="flex-grow-1"
+            />
           </div>
           <div class="d-flex ga-3 align-center">
-            <v-text-field v-model="form.path" :label="t('form.rpcPath')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
+            <v-text-field
+              v-model="form.path"
+              :label="t('form.rpcPath')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
             <v-switch v-model="form.secure" :label="t('form.https')" color="primary" hide-details />
           </div>
         </template>
@@ -275,24 +355,78 @@ async function save() {
             class="mb-2"
           />
           <div class="d-flex ga-3">
-            <v-text-field v-model="form.username" :label="t('form.username')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
-            <v-text-field v-model="form.password" :label="t('form.password')" type="password" variant="outlined" density="comfortable" autocomplete="new-password" class="flex-grow-1" />
+            <v-text-field
+              v-model="form.username"
+              :label="t('form.username')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
+            <v-text-field
+              v-model="form.password"
+              :label="t('form.password')"
+              type="password"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="new-password"
+              class="flex-grow-1"
+            />
           </div>
         </template>
 
         <!-- SSH fields -->
         <template v-else-if="form.method === 'ssh'">
           <div class="d-flex ga-3">
-            <v-text-field v-model="form.sshHost" :label="t('form.sshHost')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
-            <v-text-field v-model.number="form.sshPort" :label="t('form.sshPort')" type="number" variant="outlined" density="comfortable" autocomplete="off" style="max-width: 130px" />
+            <v-text-field
+              v-model="form.sshHost"
+              :label="t('form.sshHost')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
+            <v-text-field
+              v-model.number="form.sshPort"
+              :label="t('form.sshPort')"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              style="max-width: 130px"
+            />
           </div>
-          <v-text-field v-model="form.sshUser" :label="t('form.sshUser')" variant="outlined" density="comfortable" autocomplete="off" />
-          <v-text-field v-model="form.sshPassword" :label="t('form.sshPassword')" type="password" variant="outlined" density="comfortable" autocomplete="new-password" />
-          <v-textarea v-model="form.privateKey" :label="t('form.privateKey')" variant="outlined" density="comfortable" autocomplete="off" rows="2" />
+          <v-text-field
+            v-model="form.sshUser"
+            :label="t('form.sshUser')"
+            variant="outlined"
+            density="comfortable"
+            autocomplete="off"
+          />
+          <v-text-field
+            v-model="form.sshPassword"
+            :label="t('form.sshPassword')"
+            type="password"
+            variant="outlined"
+            density="comfortable"
+            autocomplete="new-password"
+          />
+          <v-textarea
+            v-model="form.privateKey"
+            :label="t('form.privateKey')"
+            variant="outlined"
+            density="comfortable"
+            autocomplete="off"
+            rows="2"
+          />
 
           <v-btn-toggle v-model="form.target" mandatory variant="outlined" divided class="mb-4">
-            <v-btn value="socket" prepend-icon="mdi-power-socket"><span>{{ t('form.unixSocket') }}</span></v-btn>
-            <v-btn value="tcp" prepend-icon="mdi-lan-connect"><span>{{ t('form.localhostTcp') }}</span></v-btn>
+            <v-btn value="socket" prepend-icon="mdi-power-socket"
+              ><span>{{ t('form.unixSocket') }}</span></v-btn
+            >
+            <v-btn value="tcp" prepend-icon="mdi-lan-connect"
+              ><span>{{ t('form.localhostTcp') }}</span></v-btn
+            >
           </v-btn-toggle>
 
           <v-text-field
@@ -306,8 +440,23 @@ async function save() {
             autocomplete="off"
           />
           <div v-else class="d-flex ga-3">
-            <v-text-field v-model="form.targetHost" :label="t('form.targetHost')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
-            <v-text-field v-model.number="form.targetPort" :label="t('form.port')" type="number" variant="outlined" density="comfortable" autocomplete="off" style="max-width: 130px" />
+            <v-text-field
+              v-model="form.targetHost"
+              :label="t('form.targetHost')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
+            <v-text-field
+              v-model.number="form.targetPort"
+              :label="t('form.port')"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              style="max-width: 130px"
+            />
           </div>
         </template>
 
@@ -329,8 +478,12 @@ async function save() {
           />
 
           <v-btn-toggle v-model="form.connection" mandatory variant="outlined" divided class="mb-4">
-            <v-btn value="socket" prepend-icon="mdi-power-socket"><span>{{ t('form.localSocket') }}</span></v-btn>
-            <v-btn value="tcp" prepend-icon="mdi-lan-connect"><span>{{ t('form.tcpRemote') }}</span></v-btn>
+            <v-btn value="socket" prepend-icon="mdi-power-socket"
+              ><span>{{ t('form.localSocket') }}</span></v-btn
+            >
+            <v-btn value="tcp" prepend-icon="mdi-lan-connect"
+              ><span>{{ t('form.tcpRemote') }}</span></v-btn
+            >
           </v-btn-toggle>
 
           <v-text-field
@@ -344,8 +497,23 @@ async function save() {
             autocomplete="off"
           />
           <div v-else class="d-flex ga-3">
-            <v-text-field v-model="form.dockerHost" :label="t('form.dockerHost')" variant="outlined" density="comfortable" autocomplete="off" class="flex-grow-1" />
-            <v-text-field v-model.number="form.dockerPort" :label="t('form.port')" type="number" variant="outlined" density="comfortable" autocomplete="off" style="max-width: 130px" />
+            <v-text-field
+              v-model="form.dockerHost"
+              :label="t('form.dockerHost')"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              class="flex-grow-1"
+            />
+            <v-text-field
+              v-model.number="form.dockerPort"
+              :label="t('form.port')"
+              type="number"
+              variant="outlined"
+              density="comfortable"
+              autocomplete="off"
+              style="max-width: 130px"
+            />
           </div>
 
           <v-text-field
@@ -379,7 +547,12 @@ async function save() {
                     <span v-html="t('form.agentStep2')" />
                     <div class="d-flex align-center ga-1 mt-1">
                       <code class="flex-grow-1">{{ tokenGenCmd }}</code>
-                      <v-btn size="x-small" variant="text" :icon="copied === 'cmd' ? 'mdi-check' : 'mdi-content-copy'" @click="copy(tokenGenCmd, 'cmd')" />
+                      <v-btn
+                        size="x-small"
+                        variant="text"
+                        :icon="copied === 'cmd' ? 'mdi-check' : 'mdi-content-copy'"
+                        @click="copy(tokenGenCmd, 'cmd')"
+                      />
                     </div>
                   </li>
                   <li>
@@ -388,7 +561,13 @@ async function save() {
                       <v-theme-provider theme="dark">
                         <pre>{{ agentProgramSnippet }}</pre>
                       </v-theme-provider>
-                      <v-btn size="x-small" variant="text" class="copy-abs" :icon="copied === 'prog' ? 'mdi-check' : 'mdi-content-copy'" @click="copy(agentProgramSnippet, 'prog')" />
+                      <v-btn
+                        size="x-small"
+                        variant="text"
+                        class="copy-abs"
+                        :icon="copied === 'prog' ? 'mdi-check' : 'mdi-content-copy'"
+                        @click="copy(agentProgramSnippet, 'prog')"
+                      />
                     </div>
                   </li>
                   <li v-html="t('form.agentStep4')" />
@@ -424,12 +603,25 @@ async function save() {
             <template #append-inner>
               <v-tooltip :text="t('form.copy')" location="top">
                 <template #activator="{ props: tip }">
-                  <v-btn v-bind="tip" size="x-small" variant="text" :icon="copied === 'token' ? 'mdi-check' : 'mdi-content-copy'" :disabled="!form.agentToken" @click="copy(form.agentToken, 'token')" />
+                  <v-btn
+                    v-bind="tip"
+                    size="x-small"
+                    variant="text"
+                    :icon="copied === 'token' ? 'mdi-check' : 'mdi-content-copy'"
+                    :disabled="!form.agentToken"
+                    @click="copy(form.agentToken, 'token')"
+                  />
                 </template>
               </v-tooltip>
             </template>
           </v-text-field>
-          <v-btn size="small" variant="tonal" prepend-icon="mdi-dice-5" class="mt-2" @click="generateToken">
+          <v-btn
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-dice-5"
+            class="mt-2"
+            @click="generateToken"
+          >
             {{ t('form.generateToken') }}
           </v-btn>
         </template>
@@ -464,7 +656,12 @@ async function save() {
     <template #footer>
       <v-spacer />
       <v-btn variant="text" @click="close">{{ t('common.cancel') }}</v-btn>
-      <v-btn color="primary" variant="flat" :loading="saving || testState === 'testing'" @click="save">
+      <v-btn
+        color="primary"
+        variant="flat"
+        :loading="saving || testState === 'testing'"
+        @click="save"
+      >
         {{ isEdit ? t('common.save') : t('common.add') }}
       </v-btn>
     </template>

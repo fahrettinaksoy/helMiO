@@ -74,7 +74,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    try { await authApi.logout(); } catch { /* token may already be invalid */ }
+    try {
+      await authApi.logout();
+    } catch {
+      /* token may already be invalid */
+    }
     user.value = null;
     applyToken('');
   }
@@ -86,8 +90,19 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    token, user, needsSetup, ready,
-    isAuthenticated, role, isAdmin, can,
-    init, checkStatus, login, setup, logout, clearSession,
+    token,
+    user,
+    needsSetup,
+    ready,
+    isAuthenticated,
+    role,
+    isAdmin,
+    can,
+    init,
+    checkStatus,
+    login,
+    setup,
+    logout,
+    clearSession,
   };
 });

@@ -26,8 +26,17 @@ defineProps({
   <v-card flat tile color="background" class="page-shell border-0" :class="{ 'shell-fill': fill }">
     <!-- Hero band. extension-height == content card's negative margin, so the
          title row IS the full visible blue band → title is vertically centered. -->
-    <v-toolbar color="primary" flat extended height="112" extension-height="48" class="hero-toolbar">
-      <v-btn v-if="back" icon variant="text" :to="back" class="me-2"><v-icon icon="mdi-arrow-left" /></v-btn>
+    <v-toolbar
+      color="primary"
+      flat
+      extended
+      height="112"
+      extension-height="48"
+      class="hero-toolbar"
+    >
+      <v-btn v-if="back" icon variant="text" :to="back" class="me-2"
+        ><v-icon icon="mdi-arrow-left"
+      /></v-btn>
 
       <div class="hero-titles">
         <div class="hero-line d-flex align-center ga-2 font-weight-bold">
@@ -48,7 +57,12 @@ defineProps({
     </v-toolbar>
 
     <!-- Inner content card: overlaps the hero, inset left/right for blue spacing -->
-    <v-card color="background" class="content-card border-0 mx-6 mt-n12 mb-6" elevation="0" rounded="lg">
+    <v-card
+      color="background"
+      class="content-card border-0 mx-6 mt-n12 mb-6"
+      elevation="0"
+      rounded="lg"
+    >
       <div class="pa-4">
         <slot />
       </div>
