@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n';
+import { en as vuetifyEn, tr as vuetifyTr } from 'vuetify/locale';
 import en from './locales/en.json';
 import tr from './locales/tr.json';
 
@@ -27,7 +28,13 @@ const i18n = createI18n({
   globalInjection: true,
   locale: initialLocale,
   fallbackLocale: 'en',
-  messages: { en, tr },
+  // Merge Vuetify's built-in component strings under the `$vuetify` key so
+  // the vue-i18n locale adapter (configured in plugins/vuetify.js) can
+  // localize built-in component text alongside the app's own messages.
+  messages: {
+    en: { ...en, $vuetify: vuetifyEn },
+    tr: { ...tr, $vuetify: vuetifyTr },
+  },
 });
 
 // Keep <html lang> in sync (a11y + locale-correct CSS text-transform).

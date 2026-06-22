@@ -246,7 +246,9 @@ function close() {
         <!-- live log console -->
         <div v-if="logs" class="mt-4">
           <div class="text-caption text-medium-emphasis mb-1">{{ t('install.output') }}</div>
-          <pre ref="logBox" class="install-log">{{ logs }}</pre>
+          <v-theme-provider theme="dark">
+            <pre ref="logBox" class="install-log">{{ logs }}</pre>
+          </v-theme-provider>
         </div>
       </template>
     </div>
@@ -268,8 +270,8 @@ code {
 }
 /* Terminal-style console: stays dark with light text in both themes */
 .install-log {
-  background: #0b0e13;
-  color: #d7dce3;
+  background: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   padding: 10px 12px;

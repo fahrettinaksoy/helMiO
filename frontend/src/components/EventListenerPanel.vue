@@ -143,8 +143,8 @@ const evTime = (ms) => new Date(ms).toLocaleTimeString();
           <v-expansion-panel :title="t('events.manualTitle')">
             <template #text>
               <p class="text-caption text-medium-emphasis mb-2">{{ t('events.manualHint', { confPath: plan?.confPath }) }}</p>
-              <v-sheet rounded class="snippet pa-3 mb-2">
-                <pre>{{ plan?.configBlock }}</pre>
+              <v-sheet color="surface-light" rounded class="pa-3 mb-2 overflow-x-auto">
+                <pre class="mono ma-0">{{ plan?.configBlock }}</pre>
               </v-sheet>
               <v-btn size="small" variant="tonal" :prepend-icon="copied === 'config' ? 'mdi-check' : 'mdi-content-copy'" @click="copy(plan?.configBlock, 'config')">
                 {{ copied === 'config' ? t('events.copied') : t('events.copyConfig') }}
@@ -155,7 +155,7 @@ const evTime = (ms) => new Date(ms).toLocaleTimeString();
 
               <div class="text-caption text-medium-emphasis mb-1">{{ t('events.token') }}</div>
               <div class="d-flex align-center ga-2">
-                <code class="mono token-box flex-grow-1">{{ showToken ? plan?.token : '••••••••••••••••••••' }}</code>
+                <code class="mono flex-grow-1 bg-surface-light rounded px-2 py-1 overflow-x-auto text-no-wrap">{{ showToken ? plan?.token : '••••••••••••••••••••' }}</code>
                 <v-btn size="x-small" icon variant="text" :icon="showToken ? 'mdi-eye-off' : 'mdi-eye'" @click="showToken = !showToken" />
                 <v-btn size="x-small" icon variant="text" :icon="copied === 'token' ? 'mdi-check' : 'mdi-content-copy'" @click="copy(plan?.token, 'token')" />
               </div>
@@ -171,20 +171,20 @@ const evTime = (ms) => new Date(ms).toLocaleTimeString();
           <span class="text-subtitle-2 font-weight-medium">{{ t('events.liveFeed') }}</span>
           <v-chip size="x-small" variant="tonal" class="ms-2">{{ liveEvents.length }}</v-chip>
           <v-spacer />
-          <span class="status-dot" :class="realtime.connected ? 'on' : 'off'" />
+          <v-icon icon="mdi-circle" size="8" :color="realtime.connected ? 'success' : 'error'" />
         </div>
-        <v-sheet rounded class="feed">
+        <v-sheet color="surface-light" rounded class="overflow-y-auto" style="max-height: 320px">
           <div v-if="!liveEvents.length" class="py-8 text-center text-medium-emphasis text-caption">
             {{ t('events.waiting') }}
           </div>
-          <div v-for="e in liveEvents" :key="e.id" class="feed-row">
-            <span class="feed-time">{{ evTime(e.at) }}</span>
-            <v-chip :color="evColor(e)" size="x-small" variant="flat" label class="feed-ev">{{ e.eventname }}</v-chip>
-            <span class="feed-proc text-truncate">
+          <div v-for="e in liveEvents" :key="e.id" class="d-flex align-center ga-2 px-3 py-1 feed-row text-body-2">
+            <span class="mono text-primary flex-0-0">{{ evTime(e.at) }}</span>
+            <v-chip :color="evColor(e)" size="x-small" variant="flat" label class="flex-0-0">{{ e.eventname }}</v-chip>
+            <span class="flex-1-1 min-w-0 text-truncate">
               <template v-if="e.processname">{{ e.groupname && e.groupname !== e.processname ? `${e.groupname}:${e.processname}` : e.processname }}</template>
               <template v-else>—</template>
             </span>
-            <span v-if="e.fromState" class="feed-from text-medium-emphasis">{{ e.fromState }} →</span>
+            <span v-if="e.fromState" class="flex-0-0 mono text-medium-emphasis">{{ e.fromState }} →</span>
           </div>
         </v-sheet>
       </template>
@@ -193,52 +193,7 @@ const evTime = (ms) => new Date(ms).toLocaleTimeString();
 </template>
 
 <style scoped>
-.snippet {
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  overflow-x: auto;
-}
-.snippet pre {
-  margin: 0;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.78rem;
-  white-space: pre;
-}
-.mono {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.78rem;
-}
-.token-box {
-  background: rgba(var(--v-theme-on-surface), 0.05);
-  padding: 4px 8px;
-  border-radius: 6px;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-.feed {
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  max-height: 320px;
-  overflow-y: auto;
-}
-.feed-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
-  font-size: 0.8rem;
-}
-.feed-time {
-  font-family: ui-monospace, monospace;
-  font-size: 0.72rem;
-  color: rgb(var(--v-theme-primary));
-  flex: 0 0 auto;
-}
-.feed-ev { flex: 0 0 auto; }
-.feed-proc { flex: 1 1 auto; min-width: 0; }
-.feed-from { flex: 0 0 auto; font-size: 0.72rem; }
-.status-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-}
-.status-dot.on { background: rgb(var(--v-theme-success)); }
-.status-dot.off { background: rgb(var(--v-theme-error)); }
+.min-w-0 { min-width: 0; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.78rem; }
+.feed-row { border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06); }
 </style>

@@ -108,7 +108,7 @@ function onMove(e) {
 </script>
 
 <template>
-  <div class="trend">
+  <div class="trend w-100">
     <div class="d-flex align-center mb-1 flex-wrap ga-3">
       <div v-for="l in latest" :key="l.name" class="d-flex align-center ga-1">
         <span class="legend-dot" :style="{ background: l.color }" />
@@ -150,7 +150,6 @@ function onMove(e) {
 </template>
 
 <style scoped>
-.trend { width: 100%; }
 .chart { width: 100%; display: block; }
 .grid { stroke: rgba(var(--v-theme-on-surface), 0.08); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .axis { fill: rgba(var(--v-theme-on-surface), 0.5); font-size: 9px; font-family: ui-monospace, monospace; }

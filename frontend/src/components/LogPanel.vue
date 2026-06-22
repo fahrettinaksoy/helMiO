@@ -215,7 +215,9 @@ async function download() {
         </v-btn>
       </div>
 
-      <pre ref="box" class="log-console">{{ displayContent || t('log.empty') }}</pre>
+      <v-theme-provider theme="dark">
+        <pre ref="box" class="log-console">{{ displayContent || t('log.empty') }}</pre>
+      </v-theme-provider>
     </div>
 
     <template #footer>
@@ -227,8 +229,8 @@ async function download() {
 
 <style scoped>
 .log-console {
-  background: #0b0e13;
-  color: #d7dce3;
+  background: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px 14px;

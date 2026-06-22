@@ -63,15 +63,18 @@ onBeforeUnmount(() => {
     </transition>
 
     <transition :name="transitionName">
-      <aside
+      <v-card
         v-if="modelValue"
-        class="sp-panel"
+        class="sp-panel d-flex flex-column"
         :class="`sp-${location}`"
         :style="{ width: widthPx }"
+        color="background"
+        elevation="24"
+        rounded="0"
         role="dialog"
         aria-modal="true"
       >
-        <header class="sp-header">
+        <header class="d-flex align-center ga-1 ps-4 pe-2 py-2 flex-grow-0" style="min-height: 56px">
           <slot name="header" :close="close">
             <v-icon v-if="icon" :icon="icon" class="me-2" />
             <span class="text-subtitle-1 font-weight-medium text-truncate">{{ title }}</span>
@@ -81,23 +84,32 @@ onBeforeUnmount(() => {
         </header>
         <v-divider />
 
-        <div class="sp-body">
+        <div class="flex-grow-1 overflow-y-auto">
           <slot :close="close" />
         </div>
 
         <template v-if="$slots.footer">
           <v-divider />
-          <footer class="sp-footer">
+          <footer class="d-flex ga-2 pa-3 flex-grow-0">
             <slot name="footer" :close="close" />
           </footer>
         </template>
-      </aside>
+      </v-card>
     </transition>
   </teleport>
 </template>
 
 <style scoped>
-/* Above layout chrome (app bar ~1005, footer), below Vuetify overlays (2000+). */
+/* Consistent, comfortable vertical rhythm for every form opened in a drawer.
+   The global `hideDetails: 'auto'` default removes each field's message slot,
+   so without this fields stack tightly together. Applied at the panel level so
+   all drawer forms (servers, users, channels, tokens) share the same spacing.
+   `!important` overrides per-field mb-* utility classes for one uniform gap. */
+.sp-panel :deep(.v-input) { margin-bottom: 16px !important; }
+
+/* Fixed-positioned overlay glue with no Vuetify-prop equivalent.
+   z-index sits above layout chrome (app bar ~1005, footer) but below
+   Vuetify overlays (2000+) so menus/tooltips opened inside still render on top. */
 .sp-scrim {
   position: fixed;
   inset: 0;
@@ -111,35 +123,12 @@ onBeforeUnmount(() => {
   height: 100dvh;
   max-width: 100vw;
   z-index: 1901;
-  display: flex;
-  flex-direction: column;
-  background: rgb(var(--v-theme-surface));
-  color: rgb(var(--v-theme-on-surface));
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.5);
 }
 .sp-right {
   right: 0;
 }
 .sp-left {
   left: 0;
-}
-.sp-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 10px 8px 10px 16px;
-  min-height: 56px;
-  flex: 0 0 auto;
-}
-.sp-body {
-  flex: 1 1 auto;
-  overflow-y: auto;
-}
-.sp-footer {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 8px;
-  padding: 12px;
 }
 
 /* scrim fade */

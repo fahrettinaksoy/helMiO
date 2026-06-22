@@ -125,19 +125,23 @@ watch(() => props.modelValue, (open) => { if (open) loadList(); });
         <v-alert v-else-if="!files.length" type="info" variant="tonal" :text="t('config.empty')" />
 
         <div v-else class="d-flex flex-row ga-3">
-          <v-tabs v-model="selected" direction="vertical" color="primary" class="cfg-tabs">
-            <v-tab v-for="f in files" :key="f" :value="f" class="cfg-tab">
-              <v-icon icon="mdi-file-document-outline" size="18" class="me-2" />
-              <div class="text-left min-w-0">
-                <div class="cfg-tab-name">{{ fileName(f) }}</div>
-                <div class="cfg-tab-path">{{ f }}</div>
-              </div>
-            </v-tab>
-          </v-tabs>
+          <v-card rounded="lg" class="cfg-tabs">
+            <v-tabs v-model="selected" direction="vertical" color="primary">
+              <v-tab v-for="f in files" :key="f" :value="f" class="justify-start text-none cfg-tab">
+                <v-icon icon="mdi-file-document-outline" size="18" class="me-2" />
+                <div class="text-left min-w-0">
+                  <div class="text-body-2 font-weight-bold">{{ fileName(f) }}</div>
+                  <div class="text-caption text-medium-emphasis text-truncate cfg-tab-path">{{ f }}</div>
+                </div>
+              </v-tab>
+            </v-tabs>
+          </v-card>
 
           <v-tabs-window v-model="selected" class="flex-grow-1">
             <v-tabs-window-item v-for="f in files" :key="f" :value="f">
-              <textarea v-model="contents[f]" class="cfg-textarea" spellcheck="false" />
+              <v-theme-provider theme="dark">
+                <textarea v-model="contents[f]" class="cfg-textarea" spellcheck="false" />
+              </v-theme-provider>
             </v-tabs-window-item>
           </v-tabs-window>
         </div>
@@ -158,33 +162,21 @@ watch(() => props.modelValue, (open) => { if (open) loadList(); });
 <style scoped>
 .cfg-tabs {
   flex: 0 0 240px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 8px;
   max-height: calc(100vh - 230px);
 }
 .cfg-tab {
-  justify-content: flex-start;
-  text-transform: none;
   letter-spacing: normal;
   min-height: 52px;
 }
-.cfg-tab-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
 .cfg-tab-path {
   font-size: 0.68rem;
-  opacity: 0.6;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   max-width: 170px;
 }
 .cfg-textarea {
   width: 100%;
   height: calc(100vh - 230px);
-  background: #0b0e13;
-  color: #d7dce3;
+  background: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px 14px;

@@ -14,7 +14,17 @@
     "running": "Running",
     "stopped": "Stopped",
     "fatal": "Faulty",
-    "other": "Other"
+    "other": "Other",
+    "search": "Search…",
+    "all": "All",
+    "allRoles": "All roles",
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "allMethods": "All methods",
+    "clearFilters": "Clear filters",
+    "active": "Active",
+    "disabled": "Disabled",
+    "noMatch": "No matching records"
   },
   "app": {
     "subtitle": "Supervisor Management",
@@ -129,7 +139,12 @@
     "colName": "Server",
     "colMethod": "Method",
     "colConnection": "Connection",
-    "colActions": "Actions"
+    "colStatus": "Status",
+    "colHost": "Resources",
+    "colActions": "Actions",
+    "statusOnline": "Online",
+    "statusError": "Error",
+    "statusConnecting": "Connecting"
   },
   "serverDetail": {
     "fallbackName": "Server",
@@ -470,6 +485,8 @@
     "subtitle": "Who did what, and when",
     "refresh": "Refresh",
     "filterAction": "Filter by action…",
+    "filterActor": "Search by actor…",
+    "allServers": "All servers",
     "allStatuses": "All",
     "ok": "Success",
     "error": "Error",
@@ -659,6 +676,8 @@
     "colPrefix": "Token",
     "colLastUsed": "Last used",
     "never": "never",
+    "used": "Used",
+    "neverUsed": "Never used",
     "empty": "No API tokens yet",
     "createdTitle": "Token created",
     "revealWarning": "Copy this token now — it will not be shown again.",

@@ -4,7 +4,11 @@ import vuetify from 'vite-plugin-vuetify';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
-  plugins: [vue(), vuetify({ autoImport: true })],
+  plugins: [
+    vue(),
+    // Compile Vuetify's SASS with our variable overrides (src/styles/vuetify-settings.scss).
+    vuetify({ autoImport: true, styles: { configFile: 'src/styles/vuetify-settings.scss' } }),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

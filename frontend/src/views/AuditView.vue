@@ -1,28 +1,42 @@
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { auditApi } from '@/api/client';
 import { useServersStore } from '@/stores/servers';
 import PageShell from '@/components/PageShell.vue';
-import { useFitHeight } from '@/composables/useFitHeight';
+import DataPanel from '@/components/DataPanel.vue';
 
 const { t } = useI18n();
 const serversStore = useServersStore();
-
-const wrap = ref(null);
-// Leave room for the "showing N of M" footer strip inside the card.
-const { height, recalc } = useFitHeight(wrap, { bottom: 56 });
 
 const data = ref({ items: [], total: 0, limit: 100, offset: 0 });
 const loading = ref(false);
 const error = ref('');
 const filter = ref({ status: null, action: '' });
 
+// Server-side filters (action/status) go to the API; actor + server are applied
+// client-side on top of the fetched page.
+const actorQuery = ref('');
+const serverFilter = ref(null);
+
 const statusOptions = [
   { value: null, title: t('audit.allStatuses') },
   { value: 'ok', title: t('audit.ok') },
   { value: 'error', title: t('audit.error') },
 ];
+const serverOptions = computed(() => [
+  { value: null, title: t('audit.allServers') },
+  ...serversStore.servers.map((s) => ({ value: s.id, title: s.name })),
+]);
+
+const filteredItems = computed(() => {
+  const term = actorQuery.value.trim().toLowerCase();
+  return data.value.items.filter((it) => {
+    if (serverFilter.value && it.serverId !== serverFilter.value) return false;
+    if (term && !`${it.actorName || ''}`.toLowerCase().includes(term)) return false;
+    return true;
+  });
+});
 
 const headers = computed(() => [
   { title: t('audit.colTime'), key: 'at', width: 180 },
@@ -62,7 +76,6 @@ async function load() {
     loading.value = false;
   }
 }
-watch(() => data.value.items.length, () => nextTick(recalc));
 
 onMounted(() => {
   if (!serversStore.servers.length) serversStore.fetchAll();
@@ -76,91 +89,115 @@ onMounted(() => {
       <v-btn color="white" variant="tonal" prepend-icon="mdi-refresh" @click="load">{{ t('audit.refresh') }}</v-btn>
     </template>
 
-    <template #toolbar-actions>
-      <v-text-field
-        v-model="filter.action"
-        :placeholder="t('audit.filterAction')"
-        prepend-inner-icon="mdi-filter-variant"
-        variant="solo-filled"
-        density="compact"
-        flat
-        hide-details
-        clearable
-        rounded="lg"
-        class="me-2 audit-filter"
-        @keyup.enter="load"
-      />
-      <v-select
-        v-model="filter.status"
-        :items="statusOptions"
-        variant="solo-filled"
-        density="compact"
-        flat
-        hide-details
-        rounded="lg"
-        class="audit-status me-2"
-        @update:model-value="load"
-      />
-    </template>
-
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
-    <div ref="wrap">
-    <v-card variant="flat" class="panel-card">
-      <v-data-table
-        :headers="headers"
-        :items="data.items"
-        :loading="loading"
-        item-value="id"
-        density="compact"
-        hover
-        fixed-header
-        :height="height"
-        hide-default-footer
-        :items-per-page="-1"
-        class="bg-transparent mono-table"
-      >
-        <template #[`item.at`]="{ item }">
-          <span class="text-caption">{{ new Date(item.at).toLocaleString() }}</span>
-        </template>
-        <template #[`item.actorName`]="{ item }">
-          <span class="font-weight-medium">{{ item.actorName }}</span>
-          <span v-if="item.role" class="text-caption text-medium-emphasis"> · {{ t(`roles.${item.role}`) }}</span>
-        </template>
-        <template #[`item.action`]="{ item }">
-          <v-chip :color="actionColor(item.action)" size="x-small" variant="tonal" label>{{ item.action }}</v-chip>
-        </template>
-        <template #[`item.target`]="{ item }">
-          <span class="text-truncate d-inline-block" style="max-width: 280px">{{ item.target || '—' }}</span>
-          <div v-if="item.detail" class="text-caption text-medium-emphasis text-truncate" style="max-width: 280px">{{ item.detail }}</div>
-        </template>
-        <template #[`item.serverId`]="{ item }">
-          <span class="text-caption">{{ serverName(item.serverId) }}</span>
-        </template>
-        <template #[`item.status`]="{ item }">
-          <v-icon :icon="item.status === 'ok' ? 'mdi-check-circle' : 'mdi-alert-circle'" :color="item.status === 'ok' ? 'success' : 'error'" size="18" />
-        </template>
-        <template #[`item.ip`]="{ item }">
-          <span class="text-caption text-medium-emphasis">{{ item.ip || '—' }}</span>
-        </template>
-        <template #no-data>
-          <div class="py-8 text-center text-medium-emphasis">{{ t('audit.empty') }}</div>
-        </template>
-      </v-data-table>
-      <div class="px-4 py-2 text-caption text-medium-emphasis d-flex align-center">
-        <v-icon icon="mdi-information-outline" size="14" class="me-1" />
-        {{ t('audit.showing', { shown: data.items.length, total: data.total }) }}
-      </div>
-    </v-card>
-    </div>
+    <DataPanel :bottom-gap="56">
+      <template #filters>
+        <v-text-field
+          v-model="actorQuery"
+          :placeholder="t('audit.filterActor')"
+          prepend-inner-icon="mdi-account-search"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          clearable
+          rounded="lg"
+          class="audit-actor"
+        />
+        <v-text-field
+          v-model="filter.action"
+          :placeholder="t('audit.filterAction')"
+          prepend-inner-icon="mdi-filter-variant"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          clearable
+          rounded="lg"
+          class="audit-filter"
+          @keyup.enter="load"
+          @click:clear="load"
+        />
+        <v-select
+          v-model="serverFilter"
+          :items="serverOptions"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          rounded="lg"
+          class="audit-status"
+        />
+        <v-select
+          v-model="filter.status"
+          :items="statusOptions"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          rounded="lg"
+          class="audit-status"
+          @update:model-value="load"
+        />
+      </template>
+
+      <template #default="{ height }">
+        <v-data-table
+          :headers="headers"
+          :items="filteredItems"
+          :loading="loading"
+          item-value="id"
+          density="compact"
+          hover
+          fixed-header
+          :height="height"
+          hide-default-footer
+          :items-per-page="-1"
+          class="bg-transparent mono-table"
+        >
+          <template #[`item.at`]="{ item }">
+            <span class="text-caption">{{ new Date(item.at).toLocaleString() }}</span>
+          </template>
+          <template #[`item.actorName`]="{ item }">
+            <span class="font-weight-medium">{{ item.actorName }}</span>
+            <span v-if="item.role" class="text-caption text-medium-emphasis"> · {{ t(`roles.${item.role}`) }}</span>
+          </template>
+          <template #[`item.action`]="{ item }">
+            <v-chip :color="actionColor(item.action)" size="x-small" variant="tonal" label>{{ item.action }}</v-chip>
+          </template>
+          <template #[`item.target`]="{ item }">
+            <span class="text-truncate d-inline-block" style="max-width: 280px">{{ item.target || '—' }}</span>
+            <div v-if="item.detail" class="text-caption text-medium-emphasis text-truncate" style="max-width: 280px">{{ item.detail }}</div>
+          </template>
+          <template #[`item.serverId`]="{ item }">
+            <span class="text-caption">{{ serverName(item.serverId) }}</span>
+          </template>
+          <template #[`item.status`]="{ item }">
+            <v-icon :icon="item.status === 'ok' ? 'mdi-check-circle' : 'mdi-alert-circle'" :color="item.status === 'ok' ? 'success' : 'error'" size="18" />
+          </template>
+          <template #[`item.ip`]="{ item }">
+            <span class="text-caption text-medium-emphasis">{{ item.ip || '—' }}</span>
+          </template>
+          <template #no-data>
+            <div class="py-8 text-center text-medium-emphasis">{{ t('audit.empty') }}</div>
+          </template>
+        </v-data-table>
+      </template>
+
+      <template #footer>
+        <div class="px-4 py-2 text-caption text-medium-emphasis d-flex align-center">
+          <v-icon icon="mdi-information-outline" size="14" class="me-1" />
+          {{ t('audit.showing', { shown: filteredItems.length, total: data.total }) }}
+        </div>
+      </template>
+    </DataPanel>
   </PageShell>
 </template>
 
 <style scoped>
-.panel-card {
-  border: 0px;
-}
-.audit-filter { width: 240px; max-width: 40vw; }
+.audit-actor { width: 200px; max-width: 40vw; }
+.audit-filter { width: 220px; max-width: 40vw; }
 .audit-status { width: 160px; }
 .mono-table :deep(td) { font-size: 0.82rem; }
 </style>

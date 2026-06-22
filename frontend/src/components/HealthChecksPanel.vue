@@ -147,7 +147,7 @@ const targetSummary = (c) => {
       <div v-if="loading && !checks.length" class="py-8 text-center"><v-progress-circular indeterminate color="primary" /></div>
       <div v-else-if="!checks.length" class="py-8 text-center text-medium-emphasis text-caption">{{ t('health.empty') }}</div>
 
-      <v-card v-for="c in checks" :key="c.id" variant="flat" class="hc-card mb-2">
+      <v-card v-for="c in checks" :key="c.id" rounded="lg" class="mb-2">
         <div class="d-flex align-center pa-3">
           <v-icon :icon="statusMeta(c).icon" :color="statusMeta(c).color" class="me-3" />
           <div class="flex-grow-1 min-w-0">
@@ -235,7 +235,7 @@ const targetSummary = (c) => {
 </template>
 
 <style scoped>
-.hc-card { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
+/* Vuetify has no monospace utility, nor a flex min-width:0 truncation guard. */
 .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 .min-w-0 { min-width: 0; }
 </style>

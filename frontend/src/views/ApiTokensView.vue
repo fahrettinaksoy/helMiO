@@ -1,16 +1,12 @@
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { apiTokensApi } from '@/api/client';
 import PageShell from '@/components/PageShell.vue';
+import DataPanel from '@/components/DataPanel.vue';
 import SidePanel from '@/components/SidePanel.vue';
-import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
-
-const wrap = ref(null);
-// Leave room for the usage-hint alert that sits above the table.
-const { height, recalc } = useFitHeight(wrap);
 
 const tokens = ref([]);
 const loading = ref(false);
@@ -26,6 +22,27 @@ const confirmDelete = ref(null);
 
 const ROLES = ['admin', 'operator', 'viewer'];
 const roleColor = (r) => ({ admin: 'error', operator: 'warning', viewer: 'info' }[r] || 'default');
+
+// ---- filters ----
+const search = ref('');
+const roleFilter = ref(null);
+const usageFilter = ref(null);
+const roleOptions = computed(() => [{ value: null, title: t('common.allRoles') }, ...ROLES.map((r) => ({ value: r, title: t(`roles.${r}`) }))]);
+const usageOptions = computed(() => [
+  { value: null, title: t('common.all') },
+  { value: 'used', title: t('tokens.used') },
+  { value: 'never', title: t('tokens.neverUsed') },
+]);
+const filteredTokens = computed(() => {
+  const term = search.value.trim().toLowerCase();
+  return tokens.value.filter((tk) => {
+    if (roleFilter.value && tk.role !== roleFilter.value) return false;
+    if (usageFilter.value === 'used' && !tk.lastUsedAt) return false;
+    if (usageFilter.value === 'never' && tk.lastUsedAt) return false;
+    if (term && !`${tk.name} ${tk.prefix || ''}`.toLowerCase().includes(term)) return false;
+    return true;
+  });
+});
 
 const headers = computed(() => [
   { title: t('tokens.colName'), key: 'name' },
@@ -49,7 +66,6 @@ async function load() {
   }
 }
 onMounted(load);
-watch(() => tokens.value.length, () => nextTick(recalc));
 
 function openCreate() {
   form.value = { name: '', role: 'viewer' };
@@ -102,12 +118,23 @@ async function doDelete() {
 
     <v-alert type="info" variant="tonal" density="comfortable" class="mb-4" icon="mdi-information-outline">
       {{ t('tokens.usageHint') }}
-      <code class="d-block mono mt-2">Authorization: Bearer hmo_…&#10;X-Helmio-Api-Key: hmo_…</code>
+      <code class="d-block mt-2">Authorization: Bearer hmo_…&#10;X-Helmio-Api-Key: hmo_…</code>
     </v-alert>
 
-    <div ref="wrap">
-    <v-card variant="flat" class="panel-card">
-      <v-data-table :headers="headers" :items="tokens" :loading="loading" item-value="id" density="comfortable" hover fixed-header :height="height" hide-default-footer :items-per-page="-1" class="bg-transparent">
+    <DataPanel>
+      <template #filters>
+        <v-text-field
+          v-model="search"
+          :placeholder="t('common.search')"
+          prepend-inner-icon="mdi-magnify"
+          variant="solo-filled" density="compact" flat hide-details clearable rounded="lg"
+          class="flt-search"
+        />
+        <v-select v-model="roleFilter" :items="roleOptions" variant="solo-filled" density="compact" flat hide-details rounded="lg" class="flt-select" />
+        <v-select v-model="usageFilter" :items="usageOptions" variant="solo-filled" density="compact" flat hide-details rounded="lg" class="flt-select" />
+      </template>
+      <template #default="{ height }">
+      <v-data-table :headers="headers" :items="filteredTokens" :loading="loading" item-value="id" density="comfortable" hover fixed-header :height="height" hide-default-footer :items-per-page="-1" class="bg-transparent">
         <template #[`item.name`]="{ item }">
           <div class="d-flex align-center ga-2"><v-icon icon="mdi-key-variant" size="18" /><span class="font-weight-medium">{{ item.name }}</span></div>
         </template>
@@ -115,7 +142,7 @@ async function doDelete() {
           <v-chip :color="roleColor(item.role)" size="small" variant="tonal" label>{{ t(`roles.${item.role}`) }}</v-chip>
         </template>
         <template #[`item.prefix`]="{ item }">
-          <code class="mono">{{ item.prefix }}…</code>
+          <code>{{ item.prefix }}…</code>
         </template>
         <template #[`item.lastUsedAt`]="{ item }">
           <span class="text-caption text-medium-emphasis">{{ item.lastUsedAt ? new Date(item.lastUsedAt).toLocaleString() : t('tokens.never') }}</span>
@@ -124,11 +151,11 @@ async function doDelete() {
           <v-btn size="small" icon="mdi-delete" variant="text" color="error" @click="confirmDelete = item" />
         </template>
         <template #no-data>
-          <div class="py-8 text-center text-medium-emphasis">{{ t('tokens.empty') }}</div>
+          <div class="py-8 text-center text-medium-emphasis">{{ tokens.length ? t('common.noMatch') : t('tokens.empty') }}</div>
         </template>
       </v-data-table>
-    </v-card>
-    </div>
+      </template>
+    </DataPanel>
 
     <!-- Create / reveal form (slide-over) -->
     <SidePanel
@@ -149,7 +176,7 @@ async function doDelete() {
         <template v-else>
           <v-alert type="warning" variant="tonal" density="compact" class="mb-3" :text="t('tokens.revealWarning')" />
           <div class="d-flex align-center ga-2">
-            <code class="mono token-reveal flex-grow-1">{{ created.token }}</code>
+            <code class="token-reveal flex-grow-1">{{ created.token }}</code>
             <v-btn icon="mdi-content-copy" variant="tonal" @click="copyToken" />
           </div>
         </template>
@@ -181,7 +208,8 @@ async function doDelete() {
 </template>
 
 <style scoped>
-.panel-card { border: 0px; }
-.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; }
 .token-reveal { background: rgba(var(--v-theme-on-surface), 0.06); padding: 8px 10px; border-radius: 6px; word-break: break-all; }
+.flt-search { width: 260px; max-width: 42vw; }
+.flt-select { width: 168px; }
 </style>

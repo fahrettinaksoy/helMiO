@@ -80,11 +80,12 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
 
 <template>
   <PageShell :title="t('fleet.title')" icon="mdi-server-network" fill>
+    <template #hero-subtitle>{{ t('fleet.subtitle') }}</template>
     <div class="fleet-wrap">
     <v-row class="h-100">
       <!-- Config -->
       <v-col cols="12" md="5" class="fleet-col">
-        <v-card variant="flat" class="panel-card fleet-card d-flex flex-column">
+        <v-card rounded="lg" class="fleet-card d-flex flex-column">
           <div class="fleet-card-body pa-4">
           <div class="text-overline text-medium-emphasis mb-1">{{ t('fleet.servers') }}</div>
           <div class="d-flex align-center mb-2">
@@ -94,7 +95,7 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
             <v-spacer />
             <span class="text-caption text-medium-emphasis">{{ t('fleet.nSelected', { n: selected.length }) }}</span>
           </div>
-          <v-sheet rounded class="server-pick mb-4">
+          <v-sheet rounded class="server-pick mb-4 overflow-y-auto px-3 py-2" style="max-height: 280px">
             <v-checkbox
               v-for="s in serverItems"
               :key="s.value"
@@ -147,7 +148,7 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
 
       <!-- Results -->
       <v-col cols="12" md="7" class="fleet-col">
-        <v-card variant="flat" class="panel-card pa-4 fleet-card">
+        <v-card rounded="lg" class="pa-4 fleet-card">
           <div class="d-flex align-center mb-3">
             <span class="text-overline text-medium-emphasis">{{ t('fleet.results') }}</span>
             <v-spacer />
@@ -184,8 +185,7 @@ const okCount = computed(() => results.value.filter((r) => r.ok).length);
 </template>
 
 <style scoped>
-.panel-card { border: 1px solid rgba(var(--v-theme-on-surface), 0.08); }
-.server-pick { max-height: 280px; overflow-y: auto; background: rgba(var(--v-theme-on-surface), 0.04); padding: 6px 10px; }
+.server-pick { background: rgba(var(--v-theme-on-surface), 0.04); } /* subtle inset fill, no utility match */
 /* Fill the shell (PageShell `fill`): both columns stretch to the viewport and
    each card scrolls internally. */
 .fleet-wrap { flex: 1 1 auto; min-height: 0; overflow: hidden; }

@@ -373,19 +373,21 @@ async function save() {
                 <v-icon icon="mdi-help-circle-outline" class="me-2" /> {{ t('form.agentHowTitle') }}
               </v-expansion-panel-title>
               <v-expansion-panel-text>
-                <ol class="text-body-2 ps-4 setup-steps">
+                <ol class="text-body-2 ps-4 d-flex flex-column ga-2">
                   <li v-html="t('form.agentStep1')" />
                   <li>
                     <span v-html="t('form.agentStep2')" />
-                    <div class="code-row mt-1">
-                      <code>{{ tokenGenCmd }}</code>
+                    <div class="d-flex align-center ga-1 mt-1">
+                      <code class="flex-grow-1">{{ tokenGenCmd }}</code>
                       <v-btn size="x-small" variant="text" :icon="copied === 'cmd' ? 'mdi-check' : 'mdi-content-copy'" @click="copy(tokenGenCmd, 'cmd')" />
                     </div>
                   </li>
                   <li>
                     <span v-html="t('form.agentStep3')" />
                     <div class="code-block mt-1">
-                      <pre>{{ agentProgramSnippet }}</pre>
+                      <v-theme-provider theme="dark">
+                        <pre>{{ agentProgramSnippet }}</pre>
+                      </v-theme-provider>
                       <v-btn size="x-small" variant="text" class="copy-abs" :icon="copied === 'prog' ? 'mdi-check' : 'mdi-content-copy'" @click="copy(agentProgramSnippet, 'prog')" />
                     </div>
                   </li>
@@ -470,30 +472,22 @@ async function save() {
 </template>
 
 <style scoped>
-.setup-steps li {
-  margin-bottom: 8px;
-}
+/* Field vertical rhythm is handled globally in SidePanel (all drawer forms). */
+
+/* Inline code run + terminal-style snippet block: no Vuetify equivalent. */
 code {
   background: rgba(var(--v-theme-on-surface), 0.08);
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 0.82em;
 }
-.code-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.code-row code {
-  flex: 1;
-}
 .code-block {
   position: relative;
 }
 /* Terminal-style snippet: dark with light text in both themes */
 .code-block pre {
-  background: #0b0e13;
-  color: #d7dce3;
+  background: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 0.78em;

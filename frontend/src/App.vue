@@ -62,9 +62,9 @@ async function submitChangePassword() {
   }
 }
 
-const isDark = computed(() => theme.global.name.value === 'helmioDark');
+const isDark = computed(() => theme.global.name.value === 'dark');
 function toggleTheme() {
-  const next = isDark.value ? 'helmioLight' : 'helmioDark';
+  const next = isDark.value ? 'light' : 'dark';
   theme.global.name.value = next;
   localStorage.setItem('helmio-theme', next);
 }
@@ -257,7 +257,7 @@ watch(() => realtime.alerts.length, () => {
     </v-app-bar>
 
     <!-- Left panel: icon-only rail (expands via the app-bar toggle) -->
-    <v-navigation-drawer v-model="drawer" :rail="rail" rail-width="64" color="surface" class="border-1" width="180">
+    <v-navigation-drawer v-model="drawer" :rail="rail" rail-width="64" color="surface" class="icon-rail" width="180">
       <v-list nav density="comfortable" class="px-2 py-4">
         <div v-if="!rail" class="text-overline text-medium-emphasis px-3 mb-1">{{ t('app.menu') }}</div>
         <v-tooltip
@@ -296,16 +296,25 @@ watch(() => realtime.alerts.length, () => {
           </v-tooltip>
         </div>
         <div v-else class="pa-3">
-          <v-sheet rounded="lg" class="status-card" :class="realtime.connected ? 'is-on' : 'is-off'">
-            <div class="status-badge">
+          <v-sheet
+            rounded="lg"
+            class="status-card d-flex align-center ga-3 pa-3"
+            :class="realtime.connected ? 'is-on' : 'is-off'"
+          >
+            <v-avatar
+              :color="realtime.connected ? 'success' : 'error'"
+              variant="tonal"
+              rounded="lg"
+              size="34"
+            >
               <v-icon :icon="realtime.connected ? 'mdi-lan-connect' : 'mdi-lan-disconnect'" size="18" />
               <span v-if="realtime.connected" class="status-ping" />
-            </div>
-            <div class="status-text min-w-0">
-              <div class="status-title">
+            </v-avatar>
+            <div class="min-w-0">
+              <div class="text-caption font-weight-bold text-on-surface text-truncate">
                 {{ realtime.connected ? t('app.liveConnection') : t('app.noConnection') }}
               </div>
-              <div class="status-sub">
+              <div class="text-caption text-medium-emphasis text-truncate">
                 {{ realtime.connected ? t('app.liveConnectionSub') : t('app.reconnecting') }}
               </div>
             </div>
@@ -370,6 +379,23 @@ watch(() => realtime.alerts.length, () => {
   min-width: 0;
 }
 
+/* Icon rail: replace the full-height right border with an inset vertical line
+   (top/bottom gaps) so it matches the left/right-inset horizontal dividers in
+   the panels. Vuetify's border spans the full height, so we draw our own. */
+.icon-rail :deep(.v-navigation-drawer__content),
+.icon-rail { border-inline-end: none !important; }
+.icon-rail::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  inset-inline-end: 0;
+  width: 1px;
+  background: rgba(var(--v-theme-on-surface), 0.12);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Hero fills flush to the edges; spacing lives inside the hero panel */
 .page-pad {
   padding: 0;
@@ -388,12 +414,9 @@ watch(() => realtime.alerts.length, () => {
   min-height: 0;
 }
 
-/* Live-connection status card — leading status badge + roomy text, theme-adaptive */
+/* Live-connection status card — neutral tinted surface with a colored left
+   accent. Vuetify has no utility for the soft on-surface tint + accent border. */
 .status-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
   background: rgba(var(--v-theme-on-surface), 0.04);
   border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   border-left: 3px solid rgb(var(--v-theme-success));
@@ -403,53 +426,13 @@ watch(() => realtime.alerts.length, () => {
   border-left-color: rgb(var(--v-theme-error));
 }
 
-/* Status badge: tinted rounded square with the connection icon */
-.status-badge {
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-.status-card.is-on .status-badge {
-  color: rgb(var(--v-theme-success));
-  background: rgba(var(--v-theme-success), 0.14);
-}
-.status-card.is-off .status-badge {
-  color: rgb(var(--v-theme-error));
-  background: rgba(var(--v-theme-error), 0.14);
-}
-
-/* A single live ping ring on the badge when connected */
+/* A single live ping ring on the badge when connected (no Vuetify equivalent) */
 .status-ping {
   position: absolute;
   inset: 0;
   border-radius: 10px;
   box-shadow: 0 0 0 0 rgba(var(--v-theme-success), 0.5);
   animation: pulse 2.2s ease-out infinite;
-}
-
-.status-text {
-  flex: 1 1 auto;
-  line-height: 1.25;
-}
-.status-title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgb(var(--v-theme-on-surface));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.status-sub {
-  font-size: 0.7rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 @keyframes pulse {

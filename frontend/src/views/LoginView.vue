@@ -40,7 +40,10 @@ async function submit() {
     const dest = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard';
     router.replace(dest);
   } catch (e) {
-    error.value = e.response?.data?.error || e.message || t('auth.failed');
+    // Only trust a string error from the API; some servers (or a wrong proxy
+    // target) return `error: true` or an object, which would render an empty alert.
+    const apiError = e.response?.data?.error;
+    error.value = (typeof apiError === 'string' && apiError) || e.message || t('auth.failed');
   } finally {
     loading.value = false;
   }
@@ -49,11 +52,11 @@ async function submit() {
 
 <template>
   <div class="login-wrap d-flex align-center justify-center">
-    <v-card class="login-card pa-2" elevation="8" rounded="xl" width="420" max-width="92vw">
+    <v-card variant="elevated" class="pa-2" elevation="8" rounded="xl" width="420" max-width="92vw">
       <v-card-item class="text-center pt-6">
-        <div class="brand-badge mx-auto mb-3">
-          <v-icon icon="mdi-shield-account" size="34" color="primary" />
-        </div>
+        <v-avatar color="primary" variant="tonal" rounded="lg" size="64" class="mx-auto mb-3">
+          <v-icon icon="mdi-shield-account" size="34" />
+        </v-avatar>
         <v-card-title class="text-h5 font-weight-bold">HelMiO</v-card-title>
         <v-card-subtitle>{{ isSetup ? t('auth.setupSubtitle') : t('auth.loginSubtitle') }}</v-card-subtitle>
       </v-card-item>
@@ -122,23 +125,12 @@ async function submit() {
 </template>
 
 <style scoped>
+/* Full-viewport branded backdrop: a pair of radial gradients with no Vuetify
+   utility equivalent. Centering is handled by d-flex utilities in the template. */
 .login-wrap {
   min-height: 100vh;
-  width: 100%;
   background:
     radial-gradient(900px 500px at 20% -10%, rgba(79, 124, 255, 0.18), transparent 60%),
     radial-gradient(800px 500px at 100% 110%, rgba(124, 92, 255, 0.16), transparent 55%);
-}
-.login-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-.brand-badge {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--v-theme-primary), 0.12);
 }
 </style>

@@ -71,6 +71,19 @@ startHealthChecks(); // schedule HTTP/TCP probes with auto-restart
 metricsStore.load();
 setInterval(() => metricsStore.persist(), 60000).unref?.();
 
+// Fail loudly if the port is already taken. Otherwise the process would crash
+// opaquely and the Vite proxy would silently forward /api to whatever stranger
+// holds the port — surfacing as an empty/garbled error on the login screen.
+httpServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[helmio] FATAL: port ${config.port} is already in use by another process.`);
+    console.error('[helmio] Free it (lsof -iTCP:%d -sTCP:LISTEN) or set PORT in backend/.env to a free port.', config.port);
+    process.exit(1);
+  }
+  console.error('[helmio] server error:', err);
+  process.exit(1);
+});
+
 httpServer.listen(config.port, () => {
   console.log(`[helmio] backend listening on http://localhost:${config.port}`);
   console.log(`[helmio] CORS origin: ${config.corsOrigin}, poll: ${config.pollIntervalMs}ms`);

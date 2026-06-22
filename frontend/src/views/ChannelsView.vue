@@ -1,17 +1,14 @@
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { channelsApi } from '@/api/client';
 import { useServersStore } from '@/stores/servers';
 import PageShell from '@/components/PageShell.vue';
+import DataPanel from '@/components/DataPanel.vue';
 import SidePanel from '@/components/SidePanel.vue';
-import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
 const serversStore = useServersStore();
-
-const wrap = ref(null);
-const { height, recalc } = useFitHeight(wrap);
 
 const channels = ref([]);
 const q = ref('');
@@ -30,15 +27,29 @@ const headers = computed(() => [
   { title: t('common.delete'), key: 'a_delete', width: 80, align: 'center', sortable: false },
 ]);
 
+const typeFilter = ref(null);
+const statusFilter = ref(null);
+const typeOptions = computed(() => [{ value: null, title: t('common.allTypes') }, ...meta.value.types.map((ty) => ({ value: ty, title: ty }))]);
+const statusOptions = computed(() => [
+  { value: null, title: t('common.allStatuses') },
+  { value: 'enabled', title: t('channels.enabledLabel') },
+  { value: 'disabled', title: t('channels.disabled') },
+  { value: 'error', title: t('channels.statusError') },
+]);
 const filteredChannels = computed(() => {
   const term = q.value?.trim().toLowerCase();
-  if (!term) return channels.value;
-  return channels.value.filter(
-    (c) =>
+  return channels.value.filter((c) => {
+    if (typeFilter.value && c.type !== typeFilter.value) return false;
+    if (statusFilter.value === 'enabled' && !c.enabled) return false;
+    if (statusFilter.value === 'disabled' && c.enabled) return false;
+    if (statusFilter.value === 'error' && !c.lastError) return false;
+    if (term && !(
       c.name.toLowerCase().includes(term) ||
       c.type.toLowerCase().includes(term) ||
       targetSummary(c).toLowerCase().includes(term)
-  );
+    )) return false;
+    return true;
+  });
 });
 const meta = ref({ types: ['webhook', 'slack', 'discord', 'telegram', 'email'], alertTypes: ['fatal', 'flapping'] });
 const snackbar = ref({ show: false, color: 'success', text: '' });
@@ -79,7 +90,6 @@ async function load() {
   error.value = '';
   try {
     channels.value = await channelsApi.list();
-    nextTick(recalc);
   } catch (e) {
     error.value = e.response?.data?.error || e.message;
   } finally {
@@ -205,45 +215,48 @@ function filterSummary(ch) {
       <v-btn color="white" variant="tonal" prepend-icon="mdi-plus" @click="openCreate">{{ t('channels.add') }}</v-btn>
     </template>
 
-    <template #toolbar-actions>
-      <v-text-field
-        v-model="q"
-        :placeholder="t('channels.search')"
-        prepend-inner-icon="mdi-magnify"
-        variant="solo-filled"
-        density="compact"
-        flat
-        hide-details
-        clearable
-        rounded="lg"
-        class="ch-search"
-      />
-    </template>
-
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
-    <div ref="wrap">
-    <!-- Empty: no channels at all -->
-    <v-empty-state
-      v-if="!loading && !channels.length"
-      icon="mdi-bell-off-outline"
-      :title="t('channels.empty')"
-      :text="t('channels.emptySub')"
-    >
-      <template #actions><v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('channels.add') }}</v-btn></template>
-    </v-empty-state>
+    <DataPanel>
+      <template #filters>
+        <v-text-field
+          v-model="q"
+          :placeholder="t('channels.search')"
+          prepend-inner-icon="mdi-magnify"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          clearable
+          rounded="lg"
+          class="ch-search"
+        />
+        <v-select v-model="typeFilter" :items="typeOptions" variant="solo-filled" density="compact" flat hide-details rounded="lg" class="flt-select" />
+        <v-select v-model="statusFilter" :items="statusOptions" variant="solo-filled" density="compact" flat hide-details rounded="lg" class="flt-select" />
+      </template>
 
-    <!-- Empty: no search match -->
-    <v-empty-state
-      v-else-if="channels.length && !filteredChannels.length"
-      icon="mdi-magnify-close"
-      :title="t('channels.noMatch')"
-      :text="t('channels.noMatchSub', { q })"
-    />
+      <template #default="{ height }">
+      <!-- Empty: no channels at all -->
+      <v-empty-state
+        v-if="!loading && !channels.length"
+        icon="mdi-bell-off-outline"
+        :title="t('channels.empty')"
+        :text="t('channels.emptySub')"
+      >
+        <template #actions><v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">{{ t('channels.add') }}</v-btn></template>
+      </v-empty-state>
 
-    <!-- Table -->
-    <v-card v-else variant="flat" class="panel-card">
+      <!-- Empty: no search match -->
+      <v-empty-state
+        v-else-if="channels.length && !filteredChannels.length"
+        icon="mdi-magnify-close"
+        :title="t('channels.noMatch')"
+        :text="t('channels.noMatchSub', { q })"
+      />
+
+      <!-- Table -->
       <v-data-table
+        v-else
         :headers="headers"
         :items="filteredChannels"
         item-value="id"
@@ -267,7 +280,7 @@ function filterSummary(ch) {
           <v-chip size="x-small" variant="tonal" label>{{ item.type }}</v-chip>
         </template>
         <template #[`item.target`]="{ item }">
-          <span class="mono text-medium-emphasis text-truncate d-inline-block ch-target">{{ targetSummary(item) }}</span>
+          <code class="text-medium-emphasis text-truncate d-inline-block ch-target">{{ targetSummary(item) }}</code>
         </template>
         <template #[`item.filters`]="{ item }">
           <span class="text-medium-emphasis">{{ filterSummary(item) }}</span>
@@ -302,8 +315,8 @@ function filterSummary(ch) {
           </v-tooltip>
         </template>
       </v-data-table>
-    </v-card>
-    </div>
+      </template>
+    </DataPanel>
 
     <!-- Create / edit form (slide-over) -->
     <SidePanel
@@ -390,10 +403,10 @@ function filterSummary(ch) {
 </template>
 
 <style scoped>
-.panel-card { border: 0px; }
-.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; }
-.ch-search { width: 320px; max-width: 42vw; }
-/* The table scrolls inside its fitted height; the page itself stays put. */
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.78rem; }
+.ch-search { width: 280px; max-width: 42vw; }
+.flt-select { width: 168px; }
+/* Sticky header needs the surface colour to mask rows scrolling under it. */
 .ch-table :deep(thead th) { background: rgb(var(--v-theme-surface)) !important; }
 .ch-target { max-width: 320px; vertical-align: middle; }
 </style>

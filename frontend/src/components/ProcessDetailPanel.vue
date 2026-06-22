@@ -82,14 +82,14 @@ function close() {
     <div v-if="process" class="pa-4">
       <div class="mb-4"><StatusChip :statename="process.statename" /></div>
 
-      <table class="detail-table">
-        <tbody>
-          <tr v-for="r in rows" :key="r.label">
-            <td class="label">{{ r.label }}</td>
-            <td :class="{ mono: r.mono }">{{ r.value }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <v-list density="compact" class="bg-transparent pa-0">
+        <v-list-item v-for="r in rows" :key="r.label" class="px-0">
+          <v-row no-gutters>
+            <v-col cols="5" class="text-body-2 text-medium-emphasis">{{ r.label }}</v-col>
+            <v-col class="text-body-2" :class="{ mono: r.mono }" style="word-break: break-all">{{ r.value }}</v-col>
+          </v-row>
+        </v-list-item>
+      </v-list>
 
       <v-divider class="my-5" />
 
@@ -134,24 +134,6 @@ function close() {
 </template>
 
 <style scoped>
-.detail-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.detail-table td {
-  padding: 8px 4px;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
-  font-size: 0.85rem;
-  vertical-align: top;
-}
-.detail-table .label {
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  width: 38%;
-  white-space: nowrap;
-}
-.detail-table .mono {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.78rem;
-  word-break: break-all;
-}
+/* Monospace run for log paths — Vuetify has no monospace utility. */
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.78rem; }
 </style>

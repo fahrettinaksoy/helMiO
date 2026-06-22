@@ -14,7 +14,17 @@
     "running": "Çalışıyor",
     "stopped": "Durdu",
     "fatal": "Hatalı",
-    "other": "Diğer"
+    "other": "Diğer",
+    "search": "Ara…",
+    "all": "Tümü",
+    "allRoles": "Tüm roller",
+    "allStatuses": "Tüm durumlar",
+    "allTypes": "Tüm türler",
+    "allMethods": "Tüm yöntemler",
+    "clearFilters": "Filtreleri temizle",
+    "active": "Aktif",
+    "disabled": "Devre dışı",
+    "noMatch": "Eşleşen kayıt yok"
   },
   "app": {
     "subtitle": "Supervisor Management",
@@ -129,7 +139,12 @@
     "colName": "Sunucu",
     "colMethod": "Yöntem",
     "colConnection": "Bağlantı",
-    "colActions": "İşlemler"
+    "colStatus": "Durum",
+    "colHost": "Kaynak",
+    "colActions": "İşlemler",
+    "statusOnline": "Çevrimiçi",
+    "statusError": "Hatalı",
+    "statusConnecting": "Bağlanıyor"
   },
   "serverDetail": {
     "fallbackName": "Sunucu",
@@ -470,6 +485,8 @@
     "subtitle": "Kim, ne zaman, ne yaptı",
     "refresh": "Yenile",
     "filterAction": "Eyleme göre filtrele…",
+    "filterActor": "Aktöre göre ara…",
+    "allServers": "Tüm sunucular",
     "allStatuses": "Tümü",
     "ok": "Başarılı",
     "error": "Hata",
@@ -659,6 +676,8 @@
     "colPrefix": "Token",
     "colLastUsed": "Son kullanım",
     "never": "hiç",
+    "used": "Kullanıldı",
+    "neverUsed": "Hiç kullanılmadı",
     "empty": "Henüz API token yok",
     "createdTitle": "Token oluşturuldu",
     "revealWarning": "Bu tokenı şimdi kopyalayın — tekrar gösterilmeyecek.",

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useServersStore } from '@/stores/servers';
 import { useRealtimeStore } from '@/stores/realtime';
 import { useUiStore } from '@/stores/ui';
@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n';
 import SupervisorInstallPanel from '@/components/SupervisorInstallPanel.vue';
 import ServerCard from '@/components/ServerCard.vue';
 import PageShell from '@/components/PageShell.vue';
+import DataPanel from '@/components/DataPanel.vue';
 import { methodLabel } from '@/utils/format';
 import { overviewApi } from '@/api/client';
 
@@ -47,12 +48,33 @@ function connTarget(s) {
   }
 }
 
+const methodFilter = ref(null);
+const statusFilter = ref(null);
+const methodOptions = computed(() => {
+  const present = [...new Set(store.servers.map((s) => s.method))];
+  return [{ value: null, title: t('common.allMethods') }, ...present.map((m) => ({ value: m, title: methodLabel(m) }))];
+});
+const statusOptions = computed(() => [
+  { value: null, title: t('common.allStatuses') },
+  { value: 'online', title: t('servers.statusOnline') },
+  { value: 'error', title: t('servers.statusError') },
+  { value: 'connecting', title: t('servers.statusConnecting') },
+]);
+// Live status bucket for a server: error > online (has snapshot) > connecting.
+function serverStatus(s) {
+  if (realtime.errors[s.id]) return 'error';
+  if (realtime.snapshots[s.id]) return 'online';
+  return 'connecting';
+}
+
 const filteredServers = computed(() => {
   const term = q.value.trim().toLowerCase();
-  if (!term) return store.servers;
-  return store.servers.filter(
-    (s) => s.name.toLowerCase().includes(term) || methodLabel(s.method).toLowerCase().includes(term)
-  );
+  return store.servers.filter((s) => {
+    if (methodFilter.value && s.method !== methodFilter.value) return false;
+    if (statusFilter.value && serverStatus(s) !== statusFilter.value) return false;
+    if (term && !(s.name.toLowerCase().includes(term) || methodLabel(s.method).toLowerCase().includes(term))) return false;
+    return true;
+  });
 });
 
 // --- Live status for the card view (realtime snapshots + host metrics) ---
@@ -94,36 +116,21 @@ function vmFor(s) {
 
 const headers = computed(() => [
   { title: t('servers.colName'), key: 'name', sortable: true },
-  { title: t('servers.colMethod'), key: 'method', width: 150, sortable: true },
+  { title: t('servers.colMethod'), key: 'method', width: 130, sortable: true },
   { title: t('servers.colConnection'), key: 'connection', sortable: false },
-  { title: t('servers.colActions'), key: 'actions', width: 260, align: 'end', sortable: false },
+  { title: t('servers.colStatus'), key: 'status', width: 220, sortable: false },
+  { title: t('servers.colHost'), key: 'host', width: 180, sortable: false },
+  { title: t('servers.colActions'), key: 'actions', width: 230, align: 'end', sortable: false },
 ]);
 
-// Fit the list to the viewport; the list scrolls inside, the page doesn't.
-const listWrap = ref(null);
-const listHeight = ref(420);
-function recalcHeight() {
-  if (!listWrap.value) return;
-  const top = listWrap.value.getBoundingClientRect().top;
-  const h = Math.max(240, Math.floor(window.innerHeight - top - 12));
-  listHeight.value = h;
-  nextTick(() => {
-    const overflow = document.documentElement.scrollHeight - window.innerHeight;
-    if (overflow > 0) listHeight.value = Math.max(240, h - overflow);
-  });
-}
 onMounted(async () => {
   if (!store.servers.length) await store.fetchAll();
   syncSubscriptions();
   loadHosts();
-  recalcHeight();
-  window.addEventListener('resize', recalcHeight);
 });
 onBeforeUnmount(() => {
   subscribed.forEach((id) => realtime.unsubscribe(id));
-  window.removeEventListener('resize', recalcHeight);
 });
-watch([view, () => store.servers.length, q], () => nextTick(recalcHeight));
 watch(() => store.servers.map((s) => s.id).join(','), () => { syncSubscriptions(); loadHosts(); });
 
 function add() {
@@ -167,95 +174,100 @@ async function doDelete() {
       <v-btn color="white" variant="tonal" prepend-icon="mdi-plus" @click="add">{{ t('servers.addServer') }}</v-btn>
     </template>
 
-    <template #toolbar-actions>
-      <v-text-field
-        v-model="q"
-        :placeholder="t('servers.search')"
-        prepend-inner-icon="mdi-magnify"
-        variant="solo-filled"
-        density="compact"
-        flat
-        hide-details
-        clearable
-        rounded="lg"
-        class="srv-search me-2"
-      />
-      <v-btn-toggle :model-value="view" mandatory density="comfortable" variant="outlined" divided class="view-toggle" @update:model-value="setView">
-        <v-tooltip :text="t('servers.cardView')" location="bottom">
-          <template #activator="{ props: tip }"><v-btn v-bind="tip" value="cards" icon="mdi-view-grid-outline" /></template>
-        </v-tooltip>
-        <v-tooltip :text="t('servers.tableView')" location="bottom">
-          <template #activator="{ props: tip }"><v-btn v-bind="tip" value="table" icon="mdi-table" /></template>
-        </v-tooltip>
-      </v-btn-toggle>
-    </template>
-
     <v-alert v-if="store.error" type="error" variant="tonal" class="mb-4" :text="store.error" />
 
-    <div ref="listWrap">
-    <!-- Loading skeletons -->
-    <template v-if="store.loading && !store.servers.length">
-      <v-row v-if="view === 'cards'">
-        <v-col v-for="n in 3" :key="n" cols="12" md="6" lg="4">
-          <v-skeleton-loader type="article, actions" class="server-card" />
-        </v-col>
-      </v-row>
-      <v-skeleton-loader v-else type="table-row@5" class="server-card" />
-    </template>
-
-    <!-- Empty: no match -->
-    <v-empty-state
-      v-else-if="store.servers.length && !filteredServers.length"
-      icon="mdi-magnify-close"
-      :title="t('servers.noMatch')"
-      :text="t('servers.noMatchSub', { q })"
-    />
-
-    <!-- Empty: no servers -->
-    <v-empty-state
-      v-else-if="!store.servers.length"
-      icon="mdi-server-off"
-      :title="t('servers.noServers')"
-      :text="t('servers.noServersSub')"
-    >
-      <template #actions>
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="add">{{ t('servers.addServer') }}</v-btn>
-      </template>
-    </v-empty-state>
-
-    <!-- Card view -->
-    <div v-else-if="view === 'cards'" class="srv-scroll" :style="{ height: listHeight + 'px' }">
-      <div class="srv-card-grid">
-        <ServerCard
-          v-for="s in filteredServers"
-          :key="s.id"
-          :vm="vmFor(s)"
-          :testing="!!testing[s.id]"
-          @diagnose="openInstall(s)"
-          @test="test(s)"
-          @edit="edit(s)"
-          @remove="confirmDelete = s"
+    <DataPanel>
+      <template #filters>
+        <v-text-field
+          v-model="q"
+          :placeholder="t('servers.search')"
+          prepend-inner-icon="mdi-magnify"
+          variant="solo-filled"
+          density="compact"
+          flat
+          hide-details
+          clearable
+          rounded="lg"
+          class="srv-search"
         />
-      </div>
-    </div>
+        <v-select v-model="methodFilter" :items="methodOptions" variant="solo-filled" density="compact" flat hide-details rounded="lg" class="flt-select" />
+        <v-select v-model="statusFilter" :items="statusOptions" variant="solo-filled" density="compact" flat hide-details rounded="lg" class="flt-select" />
+        <v-btn-toggle :model-value="view" mandatory density="comfortable" variant="outlined" divided class="view-toggle" @update:model-value="setView">
+          <v-tooltip :text="t('servers.cardView')" location="bottom">
+            <template #activator="{ props: tip }"><v-btn v-bind="tip" value="cards" icon="mdi-view-grid-outline" /></template>
+          </v-tooltip>
+          <v-tooltip :text="t('servers.tableView')" location="bottom">
+            <template #activator="{ props: tip }"><v-btn v-bind="tip" value="table" icon="mdi-table" /></template>
+          </v-tooltip>
+        </v-btn-toggle>
+      </template>
 
-    <!-- Table view -->
-    <v-card v-else variant="flat" class="server-card">
+      <template #default="{ height }">
+      <!-- Loading skeletons -->
+      <template v-if="store.loading && !store.servers.length">
+        <div class="pa-3">
+          <div v-if="view === 'cards'" class="srv-card-grid">
+            <v-skeleton-loader v-for="n in 3" :key="n" type="article, actions" />
+          </div>
+          <v-skeleton-loader v-else type="table-row@5" />
+        </div>
+      </template>
+
+      <!-- Empty: no match -->
+      <v-empty-state
+        v-else-if="store.servers.length && !filteredServers.length"
+        icon="mdi-magnify-close"
+        :title="t('servers.noMatch')"
+        :text="t('servers.noMatchSub', { q })"
+      />
+
+      <!-- Empty: no servers -->
+      <v-empty-state
+        v-else-if="!store.servers.length"
+        icon="mdi-server-off"
+        :title="t('servers.noServers')"
+        :text="t('servers.noServersSub')"
+      >
+        <template #actions>
+          <v-btn color="primary" prepend-icon="mdi-plus" @click="add">{{ t('servers.addServer') }}</v-btn>
+        </template>
+      </v-empty-state>
+
+      <!-- Card view -->
+      <div v-else-if="view === 'cards'" class="overflow-y-auto px-3 pb-3" :style="{ height: height + 'px' }">
+        <div class="srv-card-grid">
+          <ServerCard
+            v-for="s in filteredServers"
+            :key="s.id"
+            :vm="vmFor(s)"
+            :testing="!!testing[s.id]"
+            @diagnose="openInstall(s)"
+            @test="test(s)"
+            @edit="edit(s)"
+            @remove="confirmDelete = s"
+          />
+        </div>
+      </div>
+
+      <!-- Table view -->
       <v-data-table
+        v-else
         :headers="headers"
         :items="filteredServers"
         item-value="id"
         density="comfortable"
         hover
         fixed-header
-        :height="listHeight"
+        :height="height"
         hide-default-footer
         :items-per-page="-1"
         class="bg-transparent srv-table"
       >
         <template #[`item.name`]="{ item }">
           <router-link :to="`/servers/${item.id}`" class="d-flex align-center ga-2 text-decoration-none srv-name">
-            <v-avatar color="primary" variant="tonal" rounded size="32"><v-icon :icon="methodIcon(item.method)" size="18" /></v-avatar>
+            <v-badge dot :color="vmFor(item).statusColor" location="bottom end" offset-x="3" offset-y="3" bordered>
+              <v-avatar color="primary" variant="tonal" rounded size="32"><v-icon :icon="methodIcon(item.method)" size="18" /></v-avatar>
+            </v-badge>
             <span class="font-weight-medium">{{ item.name }}</span>
           </router-link>
         </template>
@@ -264,6 +276,32 @@ async function doDelete() {
         </template>
         <template #[`item.connection`]="{ item }">
           <span class="mono text-medium-emphasis">{{ connTarget(item) }}</span>
+        </template>
+        <template #[`item.status`]="{ item }">
+          <div v-if="vmFor(item).error" class="d-flex align-center ga-1 text-error text-caption text-truncate" style="max-width: 200px">
+            <v-icon icon="mdi-alert-circle" size="14" /> {{ vmFor(item).error }}
+          </div>
+          <div v-else-if="vmFor(item).summary">
+            <div class="d-flex rounded overflow-hidden srv-seg-bar mb-1" style="height: 6px; gap: 2px; max-width: 200px">
+              <div v-for="seg in vmFor(item).segments" :key="seg.key" :style="{ width: `${(seg.value / vmFor(item).summary.total) * 100}%`, background: `rgb(var(--v-theme-${seg.color}))` }" />
+            </div>
+            <div class="d-flex align-center ga-3 text-caption">
+              <span><b class="text-success">{{ vmFor(item).summary.running }}</b> {{ t('dashboard.running') }}</span>
+              <span><b>{{ vmFor(item).summary.total }}</b> {{ t('dashboard.total') }}</span>
+              <span v-if="vmFor(item).summary.fatal"><b class="text-error">{{ vmFor(item).summary.fatal }}</b> {{ t('dashboard.fatal') }}</span>
+            </div>
+          </div>
+          <span v-else class="d-flex align-center text-caption text-medium-emphasis">
+            <v-progress-circular indeterminate size="12" width="2" class="me-1" /> {{ t('dashboard.connecting') }}
+          </span>
+        </template>
+        <template #[`item.host`]="{ item }">
+          <div v-if="vmFor(item).host" class="d-flex align-center ga-3 text-caption text-medium-emphasis">
+            <span v-if="vmFor(item).host.load != null" :title="t('dashboard.load')"><v-icon icon="mdi-speedometer" size="13" /> {{ vmFor(item).host.load }}</span>
+            <span v-if="vmFor(item).host.memPct != null"><v-icon icon="mdi-memory" size="13" /> %{{ vmFor(item).host.memPct }}</span>
+            <span v-if="vmFor(item).host.diskPct != null" :class="vmFor(item).host.diskPct >= 85 ? 'text-warning' : ''"><v-icon icon="mdi-harddisk" size="13" /> %{{ vmFor(item).host.diskPct }}</span>
+          </div>
+          <span v-else class="text-caption text-disabled">—</span>
         </template>
         <template #[`item.actions`]="{ item }">
           <div class="d-flex justify-end ga-1">
@@ -285,8 +323,8 @@ async function doDelete() {
           </div>
         </template>
       </v-data-table>
-    </v-card>
-    </div>
+      </template>
+    </DataPanel>
 
     <SupervisorInstallPanel v-model="installPanel" :server="installTarget" />
 
@@ -309,40 +347,18 @@ async function doDelete() {
 </template>
 
 <style scoped>
-.server-card {
-  border: 0px;
-}
-.srv-search {
-  width: 340px;
-  max-width: 42vw;
-}
-.view-toggle .v-btn {
-  min-width: 52px;
-}
-/* Card view: scrolls inside, page stays put */
-.srv-scroll {
-  overflow-y: auto;
-  padding-right: 4px;
-}
-.srv-card-grid {
+/* Structural glue with no Vuetify utility equivalent. */
+.srv-search { width: 300px; max-width: 42vw; }     /* fixed search-field width */
+.flt-select { width: 168px; }                       /* filter dropdown width */
+.view-toggle .v-btn { min-width: 52px; }            /* even toggle button width */
+.srv-card-grid {                                    /* responsive auto-fill grid (v-row can't auto-fill) */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
-.srv-table :deep(thead th) {
-  background: rgb(var(--v-theme-surface)) !important;
-}
-.conn {
-  min-width: 0;
-}
-.mono {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.82rem;
-}
-.srv-name {
-  color: inherit;
-}
-.srv-name:hover .font-weight-medium {
-  color: rgb(var(--v-theme-primary));
-}
+.srv-table :deep(thead th) { background: rgb(var(--v-theme-surface)) !important; } /* sticky-header bg */
+.srv-seg-bar { background: rgba(var(--v-theme-on-surface), 0.06); } /* health-bar track behind segments */
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.82rem; }
+.srv-name { color: inherit; }                       /* link inherits text color, primary on hover */
+.srv-name:hover .font-weight-medium { color: rgb(var(--v-theme-primary)); }
 </style>

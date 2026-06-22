@@ -194,7 +194,9 @@ async function create() {
           <!-- Live preview -->
           <v-col cols="12" md="5">
             <div class="text-overline text-medium-emphasis">{{ t('program.preview') }}</div>
-            <pre class="prog-preview">{{ preview || t('program.previewEmpty') }}</pre>
+            <v-theme-provider theme="dark" class="prog-preview-sticky">
+              <pre class="prog-preview">{{ preview || t('program.previewEmpty') }}</pre>
+            </v-theme-provider>
           </v-col>
         </v-row>
       </v-card-text>
@@ -210,9 +212,14 @@ async function create() {
 </template>
 
 <style scoped>
+.prog-preview-sticky {
+  display: block;
+  position: sticky;
+  top: 0;
+}
 .prog-preview {
-  background: #0b0e13;
-  color: #d7dce3;
+  background: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px 14px;
@@ -222,7 +229,6 @@ async function create() {
   white-space: pre-wrap;
   word-break: break-word;
   min-height: 200px;
-  position: sticky;
-  top: 0;
+  margin: 0;
 }
 </style>

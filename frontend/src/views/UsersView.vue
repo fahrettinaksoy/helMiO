@@ -1,17 +1,14 @@
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { usersApi } from '@/api/client';
 import { useAuthStore } from '@/stores/auth';
 import PageShell from '@/components/PageShell.vue';
+import DataPanel from '@/components/DataPanel.vue';
 import SidePanel from '@/components/SidePanel.vue';
-import { useFitHeight } from '@/composables/useFitHeight';
 
 const { t } = useI18n();
 const auth = useAuthStore();
-
-const wrap = ref(null);
-const { height, recalc } = useFitHeight(wrap);
 
 const users = ref([]);
 const loading = ref(false);
@@ -27,6 +24,27 @@ const confirmDelete = ref(null);
 
 const ROLES = ['admin', 'operator', 'viewer'];
 const roleColor = (r) => ({ admin: 'error', operator: 'warning', viewer: 'info' }[r] || 'default');
+
+// ---- filters ----
+const search = ref('');
+const roleFilter = ref(null);
+const statusFilter = ref(null);
+const roleOptions = computed(() => [{ value: null, title: t('common.allRoles') }, ...ROLES.map((r) => ({ value: r, title: t(`roles.${r}`) }))]);
+const statusOptions = computed(() => [
+  { value: null, title: t('common.allStatuses') },
+  { value: 'active', title: t('common.active') },
+  { value: 'disabled', title: t('common.disabled') },
+]);
+const filteredUsers = computed(() => {
+  const term = search.value.trim().toLowerCase();
+  return users.value.filter((u) => {
+    if (roleFilter.value && u.role !== roleFilter.value) return false;
+    if (statusFilter.value === 'active' && u.disabled) return false;
+    if (statusFilter.value === 'disabled' && !u.disabled) return false;
+    if (term && !`${u.displayName || ''} ${u.username}`.toLowerCase().includes(term)) return false;
+    return true;
+  });
+});
 
 const headers = computed(() => [
   { title: t('users.colUser'), key: 'username' },
@@ -52,7 +70,6 @@ async function load() {
   }
 }
 onMounted(load);
-watch(() => users.value.length, () => nextTick(recalc));
 
 function openCreate() {
   editing.value = null;
@@ -117,11 +134,30 @@ const isSelf = (u) => u.id === auth.user?.id;
 
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
-    <div ref="wrap">
-    <v-card variant="flat" class="panel-card">
+    <DataPanel>
+      <template #filters>
+        <v-text-field
+          v-model="search"
+          :placeholder="t('common.search')"
+          prepend-inner-icon="mdi-magnify"
+          variant="solo-filled" density="compact" flat hide-details clearable rounded="lg"
+          class="flt-search"
+        />
+        <v-select
+          v-model="roleFilter" :items="roleOptions"
+          variant="solo-filled" density="compact" flat hide-details rounded="lg"
+          class="flt-select"
+        />
+        <v-select
+          v-model="statusFilter" :items="statusOptions"
+          variant="solo-filled" density="compact" flat hide-details rounded="lg"
+          class="flt-select"
+        />
+      </template>
+      <template #default="{ height }">
       <v-data-table
         :headers="headers"
-        :items="users"
+        :items="filteredUsers"
         :loading="loading"
         item-value="id"
         density="comfortable"
@@ -168,9 +204,12 @@ const isSelf = (u) => u.id === auth.user?.id;
             </v-tooltip>
           </div>
         </template>
+        <template #no-data>
+          <div class="py-8 text-center text-medium-emphasis">{{ t('common.noMatch') }}</div>
+        </template>
       </v-data-table>
-    </v-card>
-    </div>
+      </template>
+    </DataPanel>
 
     <!-- Create / edit form (slide-over) -->
     <SidePanel
@@ -231,7 +270,6 @@ const isSelf = (u) => u.id === auth.user?.id;
 </template>
 
 <style scoped>
-.panel-card {
-  border: 0px;
-}
+.flt-search { width: 260px; max-width: 42vw; }
+.flt-select { width: 168px; }
 </style>

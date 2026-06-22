@@ -84,13 +84,22 @@ function summary(id) {
     </div>
 
     <!-- Collapsed: status dots only -->
-    <div v-else-if="collapsed" class="collapsed-list">
+    <div v-else-if="collapsed" class="d-flex flex-column align-center ga-1 py-2">
       <v-tooltip v-for="s in serversStore.servers" :key="s.id" location="end">
         <template #activator="{ props: tip }">
-          <router-link v-bind="tip" :to="`/servers/${s.id}`" class="dot-item" :class="{ active: s.id === activeId }">
-            <span class="status-dot lg" :class="`bg-${statusColor(s.id)}`" />
-            <v-icon v-if="summary(s.id) && summary(s.id).fatal" icon="mdi-alert-circle" color="error" size="11" class="dot-badge" />
-          </router-link>
+          <v-btn
+            v-bind="tip"
+            :to="`/servers/${s.id}`"
+            :active="s.id === activeId"
+            icon
+            variant="text"
+            color="primary"
+            size="small"
+          >
+            <v-badge :model-value="!!(summary(s.id) && summary(s.id).fatal)" color="error" icon="mdi-alert-circle" offset-x="2" offset-y="2">
+              <v-icon icon="mdi-circle" size="12" :color="statusColor(s.id)" />
+            </v-badge>
+          </v-btn>
         </template>
         <div class="text-body-2 font-weight-medium">{{ s.name }}</div>
         <div class="text-caption">
@@ -107,11 +116,11 @@ function summary(id) {
         :to="`/servers/${s.id}`"
         :active="s.id === activeId"
         rounded="lg"
-        class="mb-1 server-item"
+        class="mb-1"
         color="primary"
       >
         <template #prepend>
-          <span class="status-dot" :class="`bg-${statusColor(s.id)}`" />
+          <v-icon icon="mdi-circle" size="9" :color="statusColor(s.id)" class="me-2" />
         </template>
 
         <v-list-item-title class="text-body-2 font-weight-medium">{{ s.name }}</v-list-item-title>
@@ -153,52 +162,3 @@ function summary(id) {
     </template>
   </v-navigation-drawer>
 </template>
-
-<style scoped>
-.status-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 4px;
-  flex: 0 0 auto;
-}
-.status-dot.lg {
-  width: 12px;
-  height: 12px;
-  margin-right: 0;
-}
-.server-item :deep(.v-list-item__prepend) {
-  width: 18px;
-  min-width: 18px;
-}
-
-/* Collapsed rail: centered status dots */
-.collapsed-list {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0;
-}
-.dot-item {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  transition: background 0.12s ease;
-}
-.dot-item:hover {
-  background: rgba(var(--v-theme-on-surface), 0.06);
-}
-.dot-item.active {
-  background: rgba(var(--v-theme-primary), 0.16);
-}
-.dot-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-}
-</style>

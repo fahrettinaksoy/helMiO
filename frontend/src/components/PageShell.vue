@@ -5,8 +5,11 @@
  * content card pulled up with mt-n16 and inset with horizontal margins, so the
  * primary colour shows as spacing on the left/right inside the hero.
  *
- * Slots: #hero-title, #hero-subtitle, #hero-actions, #toolbar-title,
- *        #toolbar-actions, default.
+ * The subtitle always renders under the title in the hero band (pass `subtitle`
+ * or override the #hero-subtitle slot). List pages put their filter row + table
+ * in a <DataPanel> inside the default slot for a standard card/spacing/height.
+ *
+ * Slots: #hero-title, #hero-subtitle, #hero-actions, default.
  */
 defineProps({
   title: { type: String, default: '' },
@@ -20,7 +23,7 @@ defineProps({
 </script>
 
 <template>
-  <v-card flat tile class="page-shell border-0" :class="{ 'shell-fill': fill }">
+  <v-card flat tile color="background" class="page-shell border-0" :class="{ 'shell-fill': fill }">
     <!-- Hero band. extension-height == content card's negative margin, so the
          title row IS the full visible blue band → title is vertically centered. -->
     <v-toolbar color="primary" flat extended height="112" extension-height="48" class="hero-toolbar">
@@ -33,8 +36,8 @@ defineProps({
             {{ title }}
           </slot>
         </div>
-        <div v-if="$slots['hero-subtitle']" class="hero-sub">
-          <slot name="hero-subtitle" />
+        <div v-if="$slots['hero-subtitle'] || subtitle" class="hero-sub">
+          <slot name="hero-subtitle">{{ subtitle }}</slot>
         </div>
       </div>
 
@@ -45,20 +48,7 @@ defineProps({
     </v-toolbar>
 
     <!-- Inner content card: overlaps the hero, inset left/right for blue spacing -->
-    <v-card class="content-card border-0 mx-6 mt-n12 mb-6" elevation="0" rounded="lg">
-      <template v-if="subtitle || $slots['toolbar-title'] || $slots['toolbar-actions']">
-        <v-toolbar color="surface" flat density="comfortable">
-          <v-toolbar-title class="text-subtitle-1 font-weight-medium">
-            <slot name="toolbar-title">{{ subtitle }}</slot>
-          </v-toolbar-title>
-          <template #append>
-            <div class="d-flex align-center ga-1">
-              <slot name="toolbar-actions" />
-            </div>
-          </template>
-        </v-toolbar>
-        <v-divider />
-      </template>
+    <v-card color="background" class="content-card border-0 mx-6 mt-n12 mb-6" elevation="0" rounded="lg">
       <div class="pa-4">
         <slot />
       </div>

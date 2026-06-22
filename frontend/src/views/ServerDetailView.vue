@@ -336,54 +336,55 @@ async function sendSignalAll() {
     </v-alert>
 
     <!-- Compact overview strip: status counts · health · host metrics -->
-    <div v-if="stats.length" class="ov-bar">
-      <div class="ov-counts">
+    <v-card v-if="stats.length" rounded="lg" class="d-flex align-center flex-wrap px-3 py-2 mb-3" style="row-gap: 10px; column-gap: 18px">
+      <div class="d-flex align-center flex-wrap" style="gap: 16px">
         <v-tooltip v-for="c in stats" :key="c.label" :text="c.label" location="bottom">
           <template #activator="{ props: tip }">
-            <div v-bind="tip" class="ov-count">
+            <div v-bind="tip" class="d-inline-flex align-center ga-1" style="cursor: default">
               <v-icon :icon="c.icon" :color="c.color" size="16" />
-              <span class="ov-num" :class="`text-${c.color === 'grey' ? 'medium-emphasis' : c.color}`">{{ c.value }}</span>
-              <span class="ov-lbl">{{ c.label }}</span>
+              <span class="text-h6 font-weight-bold" style="font-variant-numeric: tabular-nums; line-height: 1" :class="`text-${c.color === 'grey' ? 'medium-emphasis' : c.color}`">{{ c.value }}</span>
+              <span class="text-caption text-medium-emphasis">{{ c.label }}</span>
             </div>
           </template>
         </v-tooltip>
       </div>
 
-      <div v-if="health" class="ov-block">
-        <div class="ov-healthbar">
+      <div v-if="health" class="d-inline-flex align-center ga-2 text-medium-emphasis">
+        <div class="d-flex rounded overflow-hidden bg-surface-variant" style="width: 120px; height: 7px">
           <div
             v-for="s in health.seg"
             :key="s.key"
             :class="`bg-${s.color}`"
+            class="h-100"
             :style="{ width: (s.value / health.total * 100) + '%' }"
             :title="`${s.key}: ${s.value}`"
           />
         </div>
-        <span class="ov-meta">%{{ health.pct }}</span>
+        <span class="text-body-2 font-weight-bold" style="font-variant-numeric: tabular-nums">%{{ health.pct }}</span>
       </div>
 
       <template v-if="host">
-        <div class="ov-block" :class="{ 'text-warning': loadHigh }">
+        <div class="d-inline-flex align-center ga-1 text-medium-emphasis" :class="{ 'text-warning': loadHigh }">
           <v-icon icon="mdi-speedometer" size="15" />
-          <span class="ov-meta" :title="t('serverDetail.hostLoad')">{{ host.load ? `${host.load.one}·${host.load.five}·${host.load.fifteen}` : '—' }}</span>
+          <span class="text-body-2 font-weight-bold" style="font-variant-numeric: tabular-nums" :title="t('serverDetail.hostLoad')">{{ host.load ? `${host.load.one}·${host.load.five}·${host.load.fifteen}` : '—' }}</span>
         </div>
-        <div class="ov-block">
+        <div class="d-inline-flex align-center ga-1 text-medium-emphasis">
           <v-icon icon="mdi-memory" size="15" />
-          <span class="ov-meta" :title="t('serverDetail.hostMem')">{{ host.mem ? `${host.mem.usedMb}/${host.mem.totalMb}MB` : '—' }}</span>
+          <span class="text-body-2 font-weight-bold" style="font-variant-numeric: tabular-nums" :title="t('serverDetail.hostMem')">{{ host.mem ? `${host.mem.usedMb}/${host.mem.totalMb}MB` : '—' }}</span>
         </div>
-        <div class="ov-block">
+        <div class="d-inline-flex align-center ga-1 text-medium-emphasis">
           <v-icon icon="mdi-harddisk" size="15" />
-          <span class="ov-meta" :title="t('serverDetail.hostDisk')">{{ host.disk ? `%${host.disk.usePct}` : '—' }}</span>
+          <span class="text-body-2 font-weight-bold" style="font-variant-numeric: tabular-nums" :title="t('serverDetail.hostDisk')">{{ host.disk ? `%${host.disk.usePct}` : '—' }}</span>
         </div>
-        <div class="ov-block">
+        <div class="d-inline-flex align-center ga-1 text-medium-emphasis">
           <v-icon icon="mdi-clock-outline" size="15" />
-          <span class="ov-meta" :title="t('serverDetail.hostUptime')">{{ host.uptimeSec ? formatUptime(host.uptimeSec) : '—' }}</span>
+          <span class="text-body-2 font-weight-bold" style="font-variant-numeric: tabular-nums" :title="t('serverDetail.hostUptime')">{{ host.uptimeSec ? formatUptime(host.uptimeSec) : '—' }}</span>
         </div>
       </template>
-    </div>
+    </v-card>
 
     <!-- Trend charts (time series) -->
-    <v-card v-if="snapshot" variant="flat" class="trend-card mb-4">
+    <v-card v-if="snapshot" rounded="lg" class="mb-4">
       <div class="d-flex align-center px-4 py-2">
         <v-icon icon="mdi-chart-line" size="18" class="me-2" />
         <span class="text-subtitle-2 font-weight-medium">{{ t('serverDetail.trends') }}</span>
@@ -485,72 +486,8 @@ async function sendSignalAll() {
 
 <style scoped>
 .min-w-0 { min-width: 0; }
-.lh-1 { line-height: 1.1; }
 
-/* Compact overview strip */
-.trend-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-.ov-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
-  border: 0px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.02);
-}
-.ov-counts {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.ov-count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  cursor: default;
-}
-.ov-num {
-  font-size: 1.15rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-.ov-lbl {
-  font-size: 0.74rem;
-  color: rgba(var(--v-theme-on-surface), 0.55);
-}
-.ov-block {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-.ov-meta {
-  font-size: 0.82rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.ov-healthbar {
-  display: flex;
-  width: 120px;
-  height: 7px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: rgba(var(--v-theme-on-surface), 0.1);
-}
-.ov-healthbar > div {
-  height: 100%;
-}
-.ov-healthbar > div + div {
-  border-left: 2px solid rgb(var(--v-theme-surface));
-}
-
-/* Live dot */
+/* Live dot: pulsing realtime-connection indicator (keyframe animation). */
 .live-dot {
   width: 8px;
   height: 8px;

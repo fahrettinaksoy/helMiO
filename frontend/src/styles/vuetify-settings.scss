@@ -1,0 +1,14 @@
+// ── Vuetify SASS variables ──────────────────────────────────────────
+// https://vuetifyjs.com/en/features/sass-variables/
+//
+// This file is wired into vite-plugin-vuetify via `styles.configFile`
+// (see vite.config.js). It recompiles Vuetify's styles with the overrides
+// below, so design tokens that are NOT expressible through the runtime
+// theme/defaults (corner radius scale, typography, spacing) can be tuned
+// in one place. Only variables declared `!default` in `vuetify/settings`
+// may be overridden here.
+@use 'vuetify/settings' with (
+  // Base radius for the whole rounding scale. `rounded="lg"` (= root * 2)
+  // becomes 12px, giving cards/sheets a slightly softer, modern corner.
+  $border-radius-root: 6px
+);

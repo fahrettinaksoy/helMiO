@@ -293,7 +293,7 @@ function toggleAllGroups() {
 
 <template>
   <div>
-  <v-card variant="flat" class="table-card">
+  <v-card variant="flat" rounded="lg" class="overflow-hidden">
     <div class="d-flex align-center search-row">
       <v-select
         v-model="searchField"
@@ -302,7 +302,7 @@ function toggleAllGroups() {
         density="comfortable"
         flat
         hide-details
-        class="search-scope"
+        class="flex-0-0 search-scope"
       />
       <v-divider vertical />
       <v-text-field
@@ -419,20 +419,21 @@ function toggleAllGroups() {
                 variant="text"
                 @click="toggleGroup(item)"
               />
-              <div class="grp-icon"><v-icon icon="mdi-folder-cog" size="16" /></div>
-              <span class="grp-name">{{ item.value }}</span>
+              <v-avatar color="primary" variant="tonal" rounded="lg" size="26"><v-icon icon="mdi-folder-cog" size="16" /></v-avatar>
+              <span class="text-subtitle-2 font-weight-bold">{{ item.value }}</span>
 
-              <div v-if="groupMeta[item.value]" class="grp-progress">
-                <div class="grp-progress-track">
-                  <div
-                    class="grp-progress-fill"
-                    :style="{ width: (groupMeta[item.value].running / groupMeta[item.value].total * 100) + '%' }"
-                  />
-                </div>
-                <span class="grp-progress-text">{{ groupMeta[item.value].running }}/{{ groupMeta[item.value].total }}</span>
+              <div v-if="groupMeta[item.value]" class="d-flex align-center ga-2 ms-1">
+                <v-progress-linear
+                  :model-value="groupMeta[item.value].running / groupMeta[item.value].total * 100"
+                  color="success"
+                  height="5"
+                  rounded
+                  style="width: 56px"
+                />
+                <span class="text-caption text-medium-emphasis mono">{{ groupMeta[item.value].running }}/{{ groupMeta[item.value].total }}</span>
               </div>
 
-              <span v-if="groupMeta[item.value] && groupMeta[item.value].cpu !== undefined" class="grp-stats">
+              <span v-if="groupMeta[item.value] && groupMeta[item.value].cpu !== undefined" class="d-inline-flex align-center ga-1 ms-2 text-caption text-medium-emphasis mono">
                 <v-icon icon="mdi-chip" size="13" /> {{ groupMeta[item.value].cpu }}%
                 <span class="mx-1">·</span>
                 <v-icon icon="mdi-memory" size="13" /> {{ groupMeta[item.value].memMb }} MB
@@ -474,7 +475,7 @@ function toggleAllGroups() {
       <!-- Process name with status accent dot, monospace -->
       <template #[`item.name`]="{ item }">
         <div class="d-flex align-center ga-2">
-          <span class="state-dot" :class="`bg-${stateStyle(item.statename).color}`" />
+          <v-icon icon="mdi-circle" size="8" :color="stateStyle(item.statename).color" />
           <button type="button" class="proc-name proc-link" @click="openDetail(item)">{{ item.name }}</button>
           <v-tooltip v-if="item.flapping" :text="t('processTable.flapping')" location="top">
             <template #activator="{ props: tip }">
@@ -607,20 +608,12 @@ function toggleAllGroups() {
 
 
 <style scoped>
-.table-card {
-  background: rgb(var(--v-theme-surface));
-  border: 0px;
-  border-radius: 12px;
-  overflow: hidden;
-}
+/* Solo search fields: flush, tinted, square — no Vuetify variant matches. */
 .search-row :deep(.v-field) {
   background: rgba(var(--v-theme-on-surface), 0.03);
   border-radius: 0;
 }
-.search-scope {
-  max-width: 170px;
-  flex: 0 0 auto;
-}
+.search-scope { max-width: 170px; }
 .count-badge {
   font-size: 0.7rem;
   font-weight: 700;
@@ -630,71 +623,15 @@ function toggleAllGroups() {
   font-variant-numeric: tabular-nums;
 }
 
-/* Group header row */
+/* Group header row: tinted <td> band — no component equivalent. */
 .group-header-row td {
   background: rgba(var(--v-theme-on-surface), 0.04);
   padding: 6px 10px !important;
   border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06) !important;
 }
-.grp-icon {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: rgba(var(--v-theme-primary), 0.14);
-  color: rgb(var(--v-theme-primary));
-  flex: 0 0 auto;
-}
-.grp-name {
-  font-weight: 700;
-  font-size: 0.92rem;
-}
-.grp-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 6px;
-}
-.grp-progress-track {
-  width: 56px;
-  height: 5px;
-  border-radius: 3px;
-  background: rgba(var(--v-theme-on-surface), 0.12);
-  overflow: hidden;
-}
-.grp-progress-fill {
-  height: 100%;
-  background: rgb(var(--v-theme-success));
-  transition: width 0.4s ease;
-}
-.grp-progress-text {
-  font-size: 0.72rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-variant-numeric: tabular-nums;
-}
-.grp-stats {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: 10px;
-  font-size: 0.74rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-variant-numeric: tabular-nums;
-}
 
-/* Cells */
-.state-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-}
-.proc-name {
-  font-weight: 600;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.86rem;
-}
+/* Clickable monospace process name (plain <button>). */
+.proc-name { font-weight: 600; font-size: 0.86rem; }
 .proc-link {
   background: none;
   border: none;
@@ -707,11 +644,12 @@ function toggleAllGroups() {
   color: rgb(var(--v-theme-primary));
   text-decoration: underline;
 }
-.mono {
+/* Tabular monospace runs (pid/uptime/cpu/etc.). */
+.mono, .proc-name {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 0.84rem;
 }
+.mono { font-size: 0.84rem; }
 .cmd {
   display: inline-block;
   max-width: 280px;
@@ -721,13 +659,12 @@ function toggleAllGroups() {
   vertical-align: middle;
 }
 
-/* Quiet, locale-safe column headers (no uppercase to avoid Turkish İ) */
+/* Quiet, locale-safe column headers (no uppercase to avoid Turkish İ). */
 .process-table :deep(thead th) {
   font-size: 0.72rem !important;
   letter-spacing: 0.3px;
   color: rgba(var(--v-theme-on-surface), 0.55) !important;
   font-weight: 600;
   text-transform: none;
-  /* solid background so the sticky header isn't see-through while scrolling */
 }
 </style>
