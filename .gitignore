@@ -151,3 +151,17 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/
+
+# Updater imza ÖZEL anahtarı — ASLA commit'lenmez. Public anahtar tauri.conf'ta
+# gömülüdür; özel anahtar CI'da TAURI_SIGNING_PRIVATE_KEY secret'ı olarak durur.
+src-tauri/.tauri/*.key
+src-tauri/.tauri/*.key.pub
+
+# Uygulama yerel verisi (dev sırasında üretilen SQLite vb.)
+*.db
+*.db-shm
+*.db-wal

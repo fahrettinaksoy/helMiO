@@ -1,0 +1,8 @@
+# Rust araç zinciri SABİTLENDİ — yerel geliştirme, CI ve release AYNI derleyiciyi
+# kullanır (reproducible build). weltoly ile aynı sürüm.
+#
+# Sürüm yükseltme: burayı ve .github/workflows/release.yml'deki `toolchain:` değerini
+# BİRLİKTE güncelle (dependabot Rust toolchain'i güncelleyemez).
+[toolchain]
+channel = "1.96.1"
+components = ["rustfmt", "clippy"]

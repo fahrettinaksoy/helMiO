@@ -1,9 +1,20 @@
+# Bağımlılıklar / derleme çıktıları
 node_modules
 dist
-build
 coverage
+
+# Rust / Tauri üretilmiş + derleme çıktıları
+src-tauri/target
+src-tauri/gen
+
+# Eski Node backend/agent (port bitene kadar referans) ve Python listener
+legacy
+eventlistener
+
+# Lockfile'lar (elle biçimlendirilmez)
 package-lock.json
-backend/data
-*.min.js
-*.min.css
+
+# Değişmez/otomatik dosyalar
+*.min.*
+CHANGELOG.md
 screenshots

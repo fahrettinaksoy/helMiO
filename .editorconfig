@@ -12,6 +12,10 @@ max_line_length = 100
 [*.md]
 trim_trailing_whitespace = false
 
+# Rust: rustfmt varsayılanı 4 boşluk.
+[*.rs]
+indent_size = 4
+
 [*.py]
 indent_size = 4
 
