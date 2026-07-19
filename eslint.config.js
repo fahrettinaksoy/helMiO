@@ -1,51 +1,32 @@
-import js from '@eslint/js';
-import globals from 'globals';
-import pluginVue from 'eslint-plugin-vue';
-import prettier from 'eslint-config-prettier';
+import antfu from '@antfu/eslint-config'
+import prettier from 'eslint-config-prettier'
 
-export default [
-  {
-    ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      'package-lock.json',
-      'backend/data/**',
-    ],
-  },
+// Kod stili kuralları @antfu'dan; BİÇİMLENDİRME Prettier'e devredildi
+// (`stylistic: false`). weltoly ile aynı araç zinciri: ESLint = kod
+// kalitesi/kurallar, Prettier = biçim. `eslint-config-prettier` en sonda
+// çakışan tüm biçim kurallarını kapatır.
+//
+// Helmio frontend'i düz JS (TS değil) — `typescript: false`. Vue açık.
+export default antfu({
+  vue: true,
+  typescript: false,
 
-  js.configs.recommended,
+  // Biçimlendirmeyi Prettier yapar; antfu'nun stylistic kurallarını kapat.
+  stylistic: false,
 
-  // Node.js code (backend, agent, tooling, tests)
-  {
-    files: ['backend/**/*.js', 'agent/**/*.js', 'test/**/*.{js,mjs}', '*.js', '*.mjs'],
-    languageOptions: {
-      ecmaVersion: 2023,
-      sourceType: 'module',
-      globals: { ...globals.node },
-    },
-    rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'no-console': 'off',
-    },
-  },
+  // Biçimlendiriciler kapalı: markdown/yaml/toml (docs, Cargo.toml, workflow'lar)
+  // bu kuralların KAPSAMI DIŞINDA.
+  markdown: false,
+  yaml: false,
+  toml: false,
+  jsonc: false,
 
-  // Vue + browser code (frontend)
-  ...pluginVue.configs['flat/recommended'],
-  {
-    files: ['frontend/**/*.{js,vue}'],
-    languageOptions: {
-      ecmaVersion: 2023,
-      sourceType: 'module',
-      globals: { ...globals.browser },
-    },
-    rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'vue/multi-word-component-names': 'off',
-    },
-  },
-
-  // Disable formatting rules that conflict with Prettier
-  prettier,
-];
+  ignores: [
+    'dist',
+    'src-tauri/target',
+    'src-tauri/gen',
+    'legacy', // eski Node backend/agent — port bitene kadar referans, lint dışı
+    'eventlistener', // Python
+    '**/*.d.ts'
+  ]
+}).append(prettier)

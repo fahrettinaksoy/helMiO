@@ -1,0 +1,19 @@
+[package]
+name = "helmio-agent"
+version = "0.1.0"
+description = "Helmio Agent — hedef sunucuda supervisord XML-RPC'yi token korumalı HTTP/JSON ile sunar"
+authors = ["stackvo"]
+edition = "2021"
+
+[[bin]]
+name = "helmio-agent"
+path = "src/main.rs"
+
+[dependencies]
+# Küçük, senkron HTTP sunucusu — ajan minik olsun diye tokio/axum yok.
+tiny_http = "0.12"
+serde_json = "1"
+# XML-RPC yanıt ayrıştırma (salt-okunur DOM).
+roxmltree = "0.20"
+# supervisor HTTP basic_auth için.
+base64 = "0.22"

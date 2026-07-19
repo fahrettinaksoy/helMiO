@@ -1,0 +1,69 @@
+[package]
+name = "helmio"
+version = "0.1.0"
+description = "Helmio - çok sunuculu Supervisor yönetim uygulaması"
+authors = ["stackvo"]
+edition = "2021"
+
+[lib]
+# `_lib` soneki gereksiz görünür ama lib adını benzersiz kılar; Windows'ta bin
+# adıyla çakışmayı önler (bkz. rust-lang/cargo#8519).
+name = "helmio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+# SQLite: sqlx tabanlı, derlemeye GÖMÜLÜ (bundled) — sistem libsqlite3'e bağımlı
+# olmadan tüm platformlarda çalışır (weltoly ile aynı desen).
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-store = "2"
+tauri-plugin-http = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+# Gözlemlenebilirlik: JS ve Rust log'ları tek bir DÖNEN dosyaya (app log dizini)
+# yazılır. Yerel-önce uygulamada uzak telemetri YOK.
+tauri-plugin-log = "2"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Veri katmanı: tauri-plugin-sql'in KENDİ havuzunu ödünç alıp sqlx ile çalışırız
+# (weltoly deseni). Sürüm plugin'inkiyle (0.8.6) AYNI olmalı; ayrışırsa Pool<Sqlite>
+# iki farklı tip olur. Özellikler plugin'le hizalı: bundled SQLite + tokio-rustls.
+sqlx = { version = "0.8", default-features = false, features = ["sqlite", "runtime-tokio-rustls"] }
+
+# Secret şifreleme (bağlantı parolaları, token'lar) — eski Node backend'le AYNI
+# format: AES-256-GCM, `enc:1:base64(iv|tag|ct)`, anahtar SHA-256 ile 32 bayt.
+aes-gcm = "0.10"
+sha2 = "0.10"
+base64 = "0.22"
+hex = "0.4"
+rand = "0.8"
+
+# Kimlikler (nanoid 10) ve zaman damgaları (ISO-8601, JS toISOString ile uyumlu).
+nanoid = "0.4"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+
+# Connector katmanı (Faz 3): supervisord XML-RPC + çoklu taşıma.
+# - async-trait: `Box<dyn Connector>` için async metotlar.
+# - roxmltree  : XML-RPC yanıt ayrıştırma (salt-okunur DOM).
+# - reqwest    : TCP/HTTPS ve Agent taşıması (tauri-plugin-http ile aynı sürüm).
+# - tokio      : yerel Unix socket (UnixStream) üstünde minimal HTTP istemcisi.
+async-trait = "0.1"
+roxmltree = "0.20"
+# Program config bloğu ayrıştırma (environment satırı gibi tırnaklı/virgüllü alanlar).
+regex = "1"
+# SSH connector (Faz 3B): saf Rust SSH — parola/anahtar auth, tünel (tcp/socket
+# forward) ve exec. libssh2/openssl sistem bağımlılığı yok.
+russh = "0.45"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+tokio = { version = "1", features = ["net", "io-util", "time", "rt", "macros", "process"] }
+# E-posta bildirim kanalı (Faz 6C) — SMTP, rustls TLS.
+lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
