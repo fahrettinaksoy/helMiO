@@ -59,7 +59,7 @@ roxmltree = "0.20"
 regex = "1"
 # SSH connector (Faz 3B): saf Rust SSH — parola/anahtar auth, tünel (tcp/socket
 # forward) ve exec. libssh2/openssl sistem bağımlılığı yok.
-russh = "0.45"
+russh = "0.61"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 tokio = { version = "1", features = ["net", "io-util", "time", "rt", "macros", "process"] }
 # E-posta bildirim kanalı (Faz 6C) — SMTP, rustls TLS.
