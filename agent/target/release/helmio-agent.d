@@ -1,1 +1,0 @@
-/Users/fahrettinaksoy/Desktop/stackvo/projects/helmio/agent/target/release/helmio-agent: /Users/fahrettinaksoy/Desktop/stackvo/projects/helmio/agent/src/main.rs /Users/fahrettinaksoy/Desktop/stackvo/projects/helmio/agent/src/xmlrpc.rs

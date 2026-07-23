@@ -165,3 +165,5 @@ src-tauri/.tauri/*.key.pub
 *.db
 *.db-shm
 *.db-wal
+
+agent/target
