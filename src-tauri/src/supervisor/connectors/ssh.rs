@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use russh::client::{self, Handle};
-use russh::keys::decode_secret_key;
+use russh::keys::{decode_secret_key, PrivateKeyWithHashAlg};
 use russh::ChannelMsg;
 use serde_json::Value;
 
@@ -22,13 +22,12 @@ use crate::supervisor::{http, xmlrpc};
 /// Sunucu anahtarını doğrulamaz (eski ssh2 Node bağlayıcısı da doğrulamıyordu).
 struct ClientHandler;
 
-#[async_trait]
 impl client::Handler for ClientHandler {
     type Error = russh::Error;
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &russh::keys::key::PublicKey,
+        _server_public_key: &russh::keys::PublicKey,
     ) -> Result<bool, Self::Error> {
         Ok(true)
     }
@@ -85,8 +84,12 @@ impl SshConnector {
         if let Some(pk) = &self.private_key {
             if let Ok(key) = decode_secret_key(pk, self.ssh_password.as_deref()) {
                 authed = handle
-                    .authenticate_publickey(&self.ssh_user, Arc::new(key))
+                    .authenticate_publickey(
+                        &self.ssh_user,
+                        PrivateKeyWithHashAlg::new(Arc::new(key), None),
+                    )
                     .await
+                    .map(|r| r.success())
                     .unwrap_or(false);
             }
         }
@@ -95,7 +98,8 @@ impl SshConnector {
                 authed = handle
                     .authenticate_password(&self.ssh_user, pw.clone())
                     .await
-                    .map_err(|e| AppError::new(format!("SSH kimlik doğrulama hatası: {e}")))?;
+                    .map_err(|e| AppError::new(format!("SSH kimlik doğrulama hatası: {e}")))?
+                    .success();
             }
         }
         if !authed {
